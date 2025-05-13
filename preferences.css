@@ -1,0 +1,277 @@
+/* General Styling */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+}
+
+/* Container */
+.preference-container {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Header */
+.pref-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.pref-header h2 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.pref-header p {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Search Box */
+.search-container {
+    margin-bottom: 10px;
+}
+
+.search-box {
+    position: relative;
+    width: 100%;
+}
+
+.search-box i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+}
+
+.search-box input {
+    width: 90%;
+    padding: 12px 15px 12px 40px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #ff6547;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* Filter Buttons */
+.filter-container {
+    margin-bottom: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.filter-scroll {
+    display: flex;
+    gap: 10px;
+    padding: 5px 0;
+}
+
+.filter-btn {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+    background: #e9ecef;
+}
+
+.filter-btn.active {
+    background: #ff6547;
+    color: white;
+    border-color: #ff6547;
+}
+
+/* Section Headers */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.section-header h3 {
+    color: #333;
+    margin: 0;
+    font-size: 18px;
+}
+
+.selected-count {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Stores Container */
+.stores-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.stores-list {
+    padding: 10px;
+}
+
+.store-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.store-item:last-child {
+    border-bottom: none;
+}
+
+.store-item:hover {
+    background-color: #f8f9fa;
+}
+
+.store-item.selected {
+    background-color: #e3f2fd;
+}
+
+.store-item i {
+    margin-right: 10px;
+    color: #fc7676;
+}
+
+.store-item span {
+    flex: 1;
+    font-size: 14px;
+}
+
+/* Categories Grid */
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.category {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.category:hover {
+    border-color: #ff6547;
+    transform: translateY(-2px);
+}
+
+.category.active {
+    background: #ff6547;
+    color: white;
+    border-color: #ff6547;
+}
+
+.category i {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.category span {
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Save Button */
+.save-btn {
+    width: 100%;
+    background: #ff6547;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.3s ease;
+}
+
+.save-btn:hover {
+    background:grey;
+}
+
+.save-btn i {
+    font-size: 18px;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .preference-container {
+        padding: 15px;
+    }
+
+    .categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .filter-scroll {
+        padding-bottom: 5px;
+    }
+}
+
+/* No Results Message */
+.no-results {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 14px;
+}
