@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal Discovery - Home</title>
+    <link rel="stylesheet" href="frontend/css files/homesty.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    
+    <!-- Firebase Scripts -->
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDocs, getDoc, setDoc, query, where, orderBy, limit, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
+
+        // Make Firebase services available globally
+        window.initializeApp = initializeApp;
+        window.getFirestore = getFirestore;
+        window.getAuth = getAuth;
+        window.collection = collection;
+        window.doc = doc;
+        window.getDocs = getDocs;
+        window.getDoc = getDoc;
+        window.setDoc = setDoc;
+        window.query = query;
+        window.where = where;
+        window.orderBy = orderBy;
+        window.limit = limit;
+        window.addDoc = addDoc;
+        window.deleteDoc = deleteDoc;
+    </script>
+    <script type="module" src="backend/javascript file/hom.js"></script>
+</head>
+<body>
+    <!-- Add Deal Modal -->
+    <div id="dealModal" class="deal-modal">
+        <div class="deal-modal-content">
+            <div class="modal-header">
+                <a href="#" class="modal-back-btn" id="modalBackBtn">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <span class="modal-title">Deal Details</span>
+            </div>
+            <div id="dealModalContent"></div>
+        </div>
+    </div>
+
+    <!-- Add Image Viewer Modal -->
+    <div id="imageViewerModal" class="image-viewer-modal">
+        <span class="image-viewer-close">&times;</span>
+        <div class="image-viewer-content">
+            <img id="viewerImage" src="" alt="Full size image">
+        </div>
+    </div>
+
+    <!-- Add a test element to verify Font Awesome is working -->
+    <div id="fontAwesomeTest" style="display: none;">
+        <i class="fas fa-heart"></i>
+    </div>
+
+    <!-- 🔹 Top Navigation -->
+    <header>
+        <div class="menu-icon" onclick="window.location.href='frontend/html files/categories.html'">&#9776;</div>
+        <div class="search-container">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search deals...">
+                <i class="fa-solid fa-search mic-icon"></i>
+            </div>
+            <!-- Search History Dropdown -->
+            <div class="search-history" id="searchHistory">
+                <!-- Search history items will be added here -->
+            </div>
+            <!-- Search Results -->
+            <div class="search-results" id="searchResults">
+                <!-- Search results will be added here -->
+            </div>
+        </div>
+        <div class="profile-icons">
+            <span class="ai-assistant-icon" onclick="window.location.href='chatbot.html'"><i class="fa-solid fa-hexagon-nodes" id="chatbot-icon"></i></span>
+            <span class="user-icon" onclick="window.location.href='frontend/html files/profile.html'"><i class="fas fa-user"></i></span>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- 🔹 Flash Sales Slider -->
+        <section class="flash-sales">
+            <div class="flash-slider" id="flashSlider">
+                <!-- Flash deals will be loaded here -->
+            </div>
+            <div class="dots" id="flashDots">
+                <!-- Dots will be added dynamically -->
+            </div>
+        </section>
+
+        <!-- 🔹 Recommended Deals -->
+        <section class="recommendations section">
+            <div class="section-header">
+                <h2>Recommended for You</h2>
+                <a href="#" class="see-all"><i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="deals" id="recommendedDeals">
+                <!-- Recommended deals will be loaded here -->
+            </div>
+        </section>
+
+        <!-- 🔹 Suggested for You -->
+        <section class="suggested section">
+            <div class="section-header">
+                <h2>Suggested for You</h2>
+                <a href="#" class="see-all"><i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="deals" id="suggestedDeals">
+                <!-- Suggested deals will be loaded here -->
+            </div>
+        </section>
+
+        <!-- 🔹 Deals You Will Love -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Deals You Will Love💖</h2>
+                <a href="#" class="see-all"><i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="deals" id="exploreDeals">
+                <!-- Explore deals will be loaded here -->
+            </div>
+        </section>
+    </div>
+
+    <!-- 🔹 Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="home.html" class="active" aria-label="Home"><i class="fas fa-home"></i></a>
+        <a href="frontend/html files/map.html" aria-label="Map"><i class="fas fa-map-marker-alt"></i></a>
+        <a href="frontend/html files/hotdeal.html" aria-label="Trending"><i class="fa-solid fa-fire"></i></a>
+        <a href="frontend/html files/wishlist.html" aria-label="Favorites"><i class="fas fa-heart"></i></a>
+        <a href="frontend/html files/notify.html" id="notification-btn" aria-label="Notifications"><i class="fas fa-bell"></i></a>
+    </nav>
+
+    <style>
+    /* Recommendations Styles */
+    .deals {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* Always show 2 columns */
+        gap: 15px;
+        padding: 15px;
+        width: 100%;
+    }
+
+    .deal-card {
+        width: 100%;
+        margin-bottom: 0;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .deal-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .deal-card img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    }
+
+    .deal-card h4 {
+        padding: 10px;
+        margin: 0;
+        font-size: 14px;
+        color: #333;
+        line-height: 1.4;
+    }
+
+    .deal-card p {
+        padding: 0 10px;
+        margin: 5px 0;
+        font-size: 12px;
+        color: #666;
+        line-height: 1.4;
+    }
+
+    .deal-card .shop-info {
+        padding: 10px;
+        font-size: 12px;
+        color: #666;
+        border-top: 1px solid #eee;
+        margin-top: 5px;
+    }
+
+    .section {
+        margin-bottom: 20px;
+        background: #f8f8f8;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .section-header {
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        border-bottom: 1px solid #eee;
+    }
+
+    .section-header h2 {
+        margin: 0;
+        font-size: 18px;
+        color: #333;
+    }
+
+    /* Loading animation */
+    @keyframes pulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+    }
+
+    .loading {
+        animation: pulse 1.5s infinite;
+    }
+
+    /* Wishlist icon styles */
+    .wishlist-icon {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 8px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: #666;
+    }
+
+    .wishlist-icon:hover {
+        transform: scale(1.1);
+        color: #ff6547;
+    }
+
+    .wishlist-icon.active {
+        color: #ff6547;
+    }
+    </style>
+
+    <script>
+    // Load all sections
+    async function loadAllSections() {
+        const userId = localStorage.getItem('loggedInUserId');
+        
+        // Load flash deals
+        try {
+            const flashResponse = await fetch('http://localhost:5001/flash-deals?num=4');
+            const flashData = await flashResponse.json();
+            if (flashData.success) {
+                updateFlashSlider(flashData.deals);
+            }
+        } catch (error) {
+            console.error('Error loading flash deals:', error);
+        }
+
+        // Load recommended deals
+        try {
+            const recommendedResponse = await fetch(`http://localhost:5001/recommendations/${userId}?num=4`);
+            const recommendedData = await recommendedResponse.json();
+            if (recommendedData.success) {
+                updateDealsSection('recommendedDeals', recommendedData.recommendations);
+            }
+        } catch (error) {
+            console.error('Error loading recommended deals:', error);
+        }
+
+        // Load suggested deals
+        try {
+            const suggestedResponse = await fetch(`http://localhost:5001/suggested-deals?user_id=${userId}&num=4`);
+            const suggestedData = await suggestedResponse.json();
+            if (suggestedData.success) {
+                updateDealsSection('suggestedDeals', suggestedData.deals);
+            }
+        } catch (error) {
+            console.error('Error loading suggested deals:', error);
+        }
+
+        // Load explore deals
+        try {
+            const exploreResponse = await fetch(`http://localhost:5001/explore-deals?user_id=${userId}&num=4`);
+            const exploreData = await exploreResponse.json();
+            if (exploreData.success) {
+                updateDealsSection('exploreDeals', exploreData.deals);
+            }
+        } catch (error) {
+            console.error('Error loading explore deals:', error);
+        }
+    }
+
+    function updateFlashSlider(deals) {
+        const slider = document.getElementById('flashSlider');
+        const dots = document.getElementById('flashDots');
+        
+        if (!slider || !dots || !deals || !deals.length) return;
+        
+        slider.innerHTML = '';
+        dots.innerHTML = '';
+        
+        deals.forEach((deal, index) => {
+            const slide = document.createElement('div');
+            slide.className = `slide ${index === 0 ? 'active' : ''}`;
+            
+            const discountText = deal.discountPercentage ? `${deal.discountPercentage}% OFF` : '';
+            const priceText = deal.discountedPrice ? `₹${deal.discountedPrice}` : '';
+            const startDate = deal.createdAt ? new Date(deal.createdAt).toLocaleDateString() : 'Unknown';
+            const expiryDate = deal.expiryDate ? new Date(deal.expiryDate).toLocaleDateString() : 'No expiry';
+            
+            slide.innerHTML = `
+                <img src="${deal.imageUrl || 'default-image.jpg'}" 
+                     alt="${deal.title || 'Deal'}"
+                     onerror="this.src='default-image.jpg'">
+                <div class="slide-content">
+                    <h3>${deal.title || 'Special Deal'}</h3>
+                    ${priceText ? `<p class="price">${priceText}</p>` : ''}
+                    ${discountText ? `<p class="discount">${discountText}</p>` : ''}
+                    <div class="slide-dates">
+                        <span>Start: ${startDate}</span>
+                        <span>Expires: ${expiryDate}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Add click handler for the slide
+            slide.addEventListener('click', () => {
+                if (typeof window.showDealDetails === 'function') {
+                    window.showDealDetails({
+                        ...deal,
+                        createdAt: deal.createdAt,
+                        expiryDate: deal.expiryDate
+                    });
+                } else {
+                    console.error('showDealDetails function not found');
+                }
+            });
+            
+            slider.appendChild(slide);
+            
+            const dot = document.createElement('span');
+            dot.className = `dot ${index === 0 ? 'active' : ''}`;
+            dots.appendChild(dot);
+        });
+        
+        startSlider();
+    }
+
+    function updateDealsSection(sectionId, deals) {
+        const section = document.getElementById(sectionId);
+        if (!section || !deals) return;
+        
+        section.innerHTML = '';
+        
+        deals.forEach(deal => {
+            const dealCard = document.createElement('div');
+            dealCard.className = 'deal-card';
+            dealCard.setAttribute('data-deal-id', deal.id || '');
+            
+            const priceDisplay = deal.discountedPrice ? `₹${deal.discountedPrice}` : '';
+            const retailerName = deal.retailerName || 'Unknown Retailer';
+            const discountBadge = deal.discountPercentage ? 
+                `<div class="discount-badge">${deal.discountPercentage}% OFF</div>` : '';
+            
+            dealCard.innerHTML = `
+                <img src="${deal.imageUrl || 'default-image.jpg'}" 
+                     alt="${deal.title || 'Deal'}"
+                     onerror="this.src='default-image.jpg'">
+                ${discountBadge}
+                <h4>${deal.title || 'Special Deal'}</h4>
+                <p>${deal.description || ''}</p>
+                <div class="shop-info">
+                    <strong>Shop:</strong> ${retailerName}<br>
+                    ${priceDisplay ? `<strong>Price:</strong> ${priceDisplay}` : ''}
+                </div>
+            `;
+            
+            dealCard.addEventListener('click', () => {
+                if (typeof window.showDealDetails === 'function') {
+                    window.showDealDetails(deal);
+                } else {
+                    console.error('showDealDetails function not found');
+                }
+            });
+            
+            section.appendChild(dealCard);
+        });
+    }
+
+    function startSlider() {
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const dots = document.querySelectorAll('.dot');
+        
+        if (!slides.length || !dots.length) return;
+        
+        function showSlide(index) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            dots.forEach(dot => dot.classList.remove('active'));
+            
+            slides[index].classList.add('active');
+            dots[index].classList.add('active');
+        }
+        
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            showSlide(currentSlide);
+        }
+        
+        // Change slide every 5 seconds
+        setInterval(nextSlide, 5000);
+    }
+
+    // Load all sections when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAllSections();
+    });
+
+    // Refresh sections when user data changes
+    window.addEventListener('userDataChanged', () => {
+        loadAllSections();
+    });
+
+    // Add event listener for wishlist changes
+    document.addEventListener('wishlistUpdated', () => {
+        loadAllSections();
+    });
+
+    // Check if Font Awesome is loaded
+    window.addEventListener('load', function() {
+        const testElement = document.getElementById('fontAwesomeTest');
+        const computedStyle = window.getComputedStyle(testElement.querySelector('i'));
+        const fontFamily = computedStyle.getPropertyValue('font-family');
+        
+        if (!fontFamily.includes('Font Awesome')) {
+            console.error('Font Awesome not loaded properly');
+            // Add fallback styles for wishlist icon
+            const style = document.createElement('style');
+            style.textContent = `
+                .wishlist-icon {
+                    content: '♥';
+                    font-family: Arial, sans-serif;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,1354 @@
+Chatbot.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal Discovery Chatbot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            max-width: 480px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #ff6547;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header .user-info {
+            font-size: 0.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .user-message {
+            background: #e3f2fd;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message {
+            background: #f1f1f1;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-time {
+            font-size: 0.7em;
+            color: #666;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .chat-input {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            font-size: 1em;
+        }
+
+        .chat-input button {
+            background: #ff6547;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .chat-input button:hover {
+            background: #ff5432;
+        }
+
+        .deal-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .deal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .deal-image-container {
+            width: 100%;
+            height: 220px;
+            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .deal-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+
+        .deal-card:hover .deal-image {
+            transform: scale(1.08);
+        }
+
+        .deal-title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            line-height: 1.4;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .deal-store {
+            color: #555;
+            font-size: 0.95em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .deal-price-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .deal-price {
+            color: #ff6547;
+            font-weight: 700;
+            font-size: 1.3em;
+        }
+
+        .deal-original-price {
+            color: #999;
+            text-decoration: line-through;
+            font-size: 1em;
+        }
+
+        .deal-discount {
+            background: #ff6547;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(255,101,71,0.3);
+        }
+
+        .deal-offer {
+            background: #e3f2fd;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 12px 0;
+            font-size: 0.95em;
+            color: #1976d2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .deal-description {
+            color: #555;
+            font-size: 0.95em;
+            margin: 15px 0;
+            line-height: 1.6;
+            padding: 0 5px;
+        }
+
+        .deal-description ul {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+
+        .deal-description li {
+            margin: 6px 0;
+            position: relative;
+        }
+
+        .deal-description li:before {
+            content: "•";
+            color: #ff6547;
+            font-weight: bold;
+            position: absolute;
+            left: -15px;
+        }
+
+        .deal-expiry {
+            color: #666;
+            font-size: 0.9em;
+            margin: 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .deal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .deal-button {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-weight: 600;
+            background: #e3f2fd;
+            color: #1976d2;
+            width: 100%;
+        }
+
+        .deal-button:hover {
+            background: #bbdefb;
+            transform: translateY(-2px);
+        }
+
+        .emoji {
+            font-size: 1.1em;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #666;
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .navigation-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .navigation-button:hover {
+            background: #45a049;
+        }
+
+        .voice-button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .voice-button:hover {
+            background: #1976D2;
+        }
+
+        .voice-button.recording {
+            background: #f44336;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Add deal card styles from categories.html */
+        .discount-items {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 10px;
+            background: #f8f8f8;
+        }
+
+        .discount-item {
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            position: relative;
+            width: 100%;
+            margin: 0;
+        }
+
+        .discount-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .discount-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .discount-item h4 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.3;
+            height: 2.6em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .discount-item p {
+            color: #666;
+            font-size: 12px;
+            margin: 8px 0;
+            height: 3em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        .discount-item .shop-info {
+            font-size: 12px;
+            color: #666;
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+
+        .discount-item .shop-info strong {
+            color: #ff6547;
+            font-size: 13px;
+        }
+
+        .discount-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff6547;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(255,101,71,0.2);
+        }
+
+        .price-info {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .price-info .discounted-price {
+            color: #ff6547;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .price-info .original-price {
+            color: #999;
+            text-decoration: line-through;
+            font-size: 13px;
+        }
+
+        .price-info .discount-percent {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .expiry-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+        }
+
+        /* Update message container for deal cards */
+        .message.deal-message {
+            max-width: 100%;
+            background: none;
+            padding: 0;
+        }
+
+        .message.deal-message .message-text {
+            background: #f1f1f1;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .message.deal-message .discount-items {
+            margin: 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        @media (max-width: 480px) {
+            .message.deal-message .discount-items {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Add follow-up suggestion styles */
+        .follow-up-suggestions {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+        }
+
+        .suggestion-text {
+            display: inline-block;
+            margin: 5px 0;
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .suggestion-text:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
+        /* Add back button styles */
+        .back-btn {
+            text-decoration: none;
+            color: white;
+            font-size: 20px;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateX(-3px);
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+        }
+
+        /* Add deal modal styles */
+        .deal-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .deal-modal-content {
+            background-color: white;
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            padding-bottom: 20px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 10px;
+            background-color: white;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
+
+        .modal-back-btn {
+            text-decoration: none;
+            color: #333;
+            font-size: 24px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-back-btn:hover {
+            color: #ff6547;
+            background-color: rgba(255, 101, 71, 0.1);
+        }
+
+        .modal-title {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .deal-modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: contain;
+            background: #f8f8f8;
+            padding: 20px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .deal-modal-title {
+            font-size: 20px;
+            color: #333;
+            margin: 15px;
+            line-height: 1.4;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .wishlist-icon {
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            padding: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .wishlist-icon:hover {
+            color: #ff6547;
+            transform: scale(1.1);
+        }
+
+        .wishlist-icon.active {
+            color: #ff6547;
+        }
+
+        .deal-modal-price {
+            font-size: 18px;
+            color: #ff6547;
+            font-weight: bold;
+            margin: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: #fff5f3;
+            border-radius: 8px;
+        }
+
+        .deal-modal-badge {
+            display: inline-block;
+            background: #ff6547;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin: 15px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(255, 101, 71, 0.2);
+        }
+
+        .deal-modal-description {
+            color: #444;
+            margin: 0 15px 15px;
+            line-height: 1.6;
+            font-size: 15px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 8px;
+        }
+
+        .deal-modal-info {
+            background-color: white;
+            padding: 15px;
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .deal-modal-info-section {
+            margin-bottom: 20px;
+        }
+
+        .deal-modal-info-section h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .shop-name-section {
+            background: #fff5f3;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ff6547;
+            box-shadow: 0 2px 4px rgba(255, 101, 71, 0.1);
+        }
+
+        .shop-name-section h3 {
+            color: #ff6547;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .shop-name-section p {
+            color: #333;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 101, 71, 0.2);
+        }
+
+        .shop-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .shop-detail-item {
+            background: #f8f8f8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .shop-detail-item strong {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .deal-modal-dates {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f8f8;
+            margin: 15px;
+            border-radius: 8px;
+        }
+
+        .deal-modal-date-item {
+            text-align: center;
+        }
+
+        .deal-modal-date-item span {
+            display: block;
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .deal-modal-date-item strong {
+            color: #333;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Add Deal Modal -->
+        <div id="dealModal" class="deal-modal">
+            <div class="deal-modal-content">
+                <div class="modal-header">
+                    <a href="#" class="modal-back-btn" id="modalBackBtn">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <span class="modal-title">Deal Details</span>
+                </div>
+                <div id="dealModalContent"></div>
+            </div>
+        </div>
+
+        <div class="chat-header">
+            <a href="home.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                 Deal Discovery Assistant
+            </div>
+            <div class="user-info">
+                <i class="fas fa-user"></i>
+                <span id="user-name">Guest</span>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message bot-message">
+                Hello! I'm your deal discovery assistant. How can I help you find great deals today?
+                <div class="message-time">Just now</div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Type your message here..." autocomplete="off">
+            <button class="voice-button" id="voice-button" title="Voice Input">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i> Send
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const voiceButton = document.getElementById('voice-button');
+        let currentUser = null;
+
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBhgQ-3m6DcXGZlDg6kq2Jx7Ei4ORHVJPE",
+            authDomain: "login-form-f98c7.firebaseapp.com",
+            projectId: "login-form-f98c7",
+            storageBucket: "login-form-f98c7.firebasestorage.app",
+            messagingSenderId: "174637943387",
+            appId: "1:174637943387:web:45fe45fe97f2699ee04d7e",
+            measurementId: "G-QX0XXWB1Q6"
+        };
+
+        // Check if user is logged in
+        function checkAuth() {
+            const userId = localStorage.getItem('loggedInUserId');
+            if (userId) {
+                currentUser = { uid: userId };
+                document.getElementById('user-name').textContent = 'User';
+                return true;
+            } else {
+                document.getElementById('user-name').textContent = 'Guest';
+                return false;
+            }
+        }
+
+        // Handle Enter key press
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Voice input handling
+        let recognition = null;
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                userInput.value = text;
+                voiceButton.classList.remove('recording');
+            };
+
+            recognition.onend = () => {
+                voiceButton.classList.remove('recording');
+            };
+        }
+
+        voiceButton.addEventListener('click', () => {
+            if (recognition) {
+                if (voiceButton.classList.contains('recording')) {
+                    recognition.stop();
+                } else {
+                    recognition.start();
+                    voiceButton.classList.add('recording');
+                }
+            }
+        });
+
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            // Check if user is authenticated
+            if (!checkAuth()) {
+                addMessage('Please log in to use the chatbot. You will be redirected to the login page.', 'bot');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+                return;
+            }
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            userInput.value = '';
+
+            // Show loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message bot-message loading';
+            loadingDiv.innerHTML = '<i class="fas fa-spinner"></i> Thinking...';
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Send message to backend
+            fetch('http://localhost:5000/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    message: message,
+                    userId: currentUser.uid
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Remove loading indicator
+                if (loadingDiv && loadingDiv.parentNode) {
+                    chatMessages.removeChild(loadingDiv);
+                }
+                
+                // Add bot response
+                if (data && data.response) {
+                    addMessage(data.response, 'bot');
+                } else {
+                    addMessage("Sorry, I received an invalid response from the server.", 'bot');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Remove loading indicator if it exists
+                if (loadingDiv && loadingDiv.parentNode) {
+                    chatMessages.removeChild(loadingDiv);
+                }
+                addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+            });
+        }
+
+        function formatDealCard(dealInfo) {
+            console.log('Formatting deal card:', dealInfo);
+            const lines = dealInfo.split('\n');
+            let card = '<div class="deal-card">';
+            
+            // Process image first if available
+            let imageUrl = '';
+            for (const line of lines) {
+                if (line.startsWith('![')) {
+                    imageUrl = line.match(/\((.*?)\)/)[1];
+                    break;
+                }
+            }
+            
+            // Add image container if image is available
+            if (imageUrl) {
+                card += `<div class="deal-image-container"><img src="${imageUrl}" alt="Product Image" class="deal-image"></div>`;
+            }
+            
+            for (const line of lines) {
+                console.log('Processing line:', line);
+                if (line.includes('**')) {
+                    // Title with emoji
+                    const title = line.replace(/\*\*/g, '').trim();
+                    card += `<div class="deal-title">${title}</div>`;
+                } else if (line.includes('🏪')) {
+                    // Store info
+                    const storeInfo = line.replace('🏪', '').replace('📍', '').trim();
+                    card += `<div class="deal-store"><i class="fas fa-store"></i> ${storeInfo}</div>`;
+                } else if (line.includes('💰')) {
+                    // Price info with discount
+                    const priceInfo = line.replace('💰', '').trim();
+                    const parts = priceInfo.split('|').map(p => p.trim());
+                    
+                    card += '<div class="deal-price-container">';
+                    
+                    parts.forEach(part => {
+                        if (part.startsWith('Price:')) {
+                            card += `<div class="deal-price">${part.replace('Price:', '').trim()}</div>`;
+                        } else if (part.startsWith('~~')) {
+                            card += `<div class="deal-original-price">${part.replace(/~~/g, '').trim()}</div>`;
+                        } else if (part.includes('% OFF')) {
+                            card += `<div class="deal-discount">${part}</div>`;
+                        }
+                    });
+                    
+                    card += '</div>';
+                } else if (line.includes('🎁')) {
+                    // Offer details
+                    const offer = line.replace('🎁', '').trim();
+                    card += `<div class="deal-offer"><i class="fas fa-gift"></i> ${offer}</div>`;
+                } else if (line.includes('📝')) {
+                    // Description with bullet points
+                    const description = line.replace('📝', '').trim();
+                    if (description.includes('•')) {
+                        const points = description.split('•').filter(p => p.trim());
+                        card += `<div class="deal-description"><ul>${points.map(p => `<li>${p.trim()}</li>`).join('')}</ul></div>`;
+                    } else {
+                        card += `<div class="deal-description">${description}</div>`;
+                    }
+                } else if (line.includes('⏰')) {
+                    // Expiry date
+                    const expiry = line.replace('⏰', '').trim();
+                    card += `<div class="deal-expiry"><i class="fas fa-clock"></i> ${expiry}</div>`;
+                } else if (line.includes('[View Details]')) {
+                    // Action buttons
+                    card += `<div class="deal-actions">
+                        <button class="deal-button view" onclick="viewDealDetails(this)">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                        <button class="deal-button directions" onclick="getDirections(this)">
+                            <i class="fas fa-directions"></i> Get Directions
+                        </button>
+                        <button class="deal-button wishlist" onclick="addToWishlist(this)">
+                            <i class="fas fa-heart"></i> Add to Wishlist
+                        </button>
+                    </div>`;
+                }
+            }
+
+            card += '</div>';
+            console.log('Formatted card:', card);
+            return card;
+        }
+
+        function viewDealDetails(button) {
+            const dealCard = button.closest('.discount-item');
+            const title = dealCard.querySelector('h4').textContent;
+            const storeInfo = dealCard.querySelector('.shop-info strong').textContent.replace('📍 ', '').trim();
+            const price = dealCard.querySelector('.price-info .discounted-price')?.textContent || '';
+            const originalPrice = dealCard.querySelector('.price-info .original-price')?.textContent || '';
+            const discount = dealCard.querySelector('.price-info .discount-percent')?.textContent || '';
+            const description = dealCard.querySelector('p')?.textContent || '';
+            const expiry = dealCard.querySelector('.expiry-info')?.textContent.replace('⏰ Expires: ', '') || '';
+            const imageUrl = dealCard.querySelector('img')?.src || '';
+
+            const dealData = {
+                title: title,
+                retailerName: storeInfo,
+                originalPrice: originalPrice.replace('₹', '').trim(),
+                discountedPrice: price.replace('₹', '').trim(),
+                discountType: discount,
+                description: description,
+                expiryDate: expiry,
+                imageUrl: imageUrl
+            };
+
+            showDealDetails(dealData);
+        }
+
+        function handleNavigationResponse(text) {
+            // Extract store name from the navigation response
+            const storeName = text.replace('navigating to', '').replace('Puducherry', '').trim();
+            
+            // Show loading message
+            addMessage('Getting directions...', 'bot');
+            
+            // Make API call to get coordinates
+            fetch('http://localhost:5000/navigate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ store_name: storeName })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Store the coordinates in localStorage for the map to use
+                    localStorage.setItem('navigationDestination', JSON.stringify({
+                        coordinates: data.coordinates,
+                        storeName: data.store_name
+                    }));
+                    
+                    // Redirect to map page
+                    window.location.href = 'map.html';
+                } else {
+                    addMessage(`Sorry, I couldn't find that location: ${data.message}`, 'bot');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                addMessage('Sorry, there was an error getting directions. Please try again.', 'bot');
+            });
+        }
+
+        // Update the addMessage function to handle navigation responses
+        function addMessage(text, sender) {
+            console.log('Adding message:', { text, sender });
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            if (sender === 'bot' && text) {
+                // Check if this is a navigation response
+                if (text.startsWith('navigating to')) {
+                    messageDiv.textContent = text;
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'message-time';
+                    timeDiv.textContent = new Date().toLocaleTimeString();
+                    messageDiv.appendChild(timeDiv);
+                    chatMessages.appendChild(messageDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Handle the navigation response
+                    handleNavigationResponse(text);
+                    return;
+                }
+                
+                // Split the response into text and deal cards
+                const parts = text.split('\n\n');
+                
+                if (parts.length === 2 && parts[1].includes('discount-items')) {
+                    // If we have both AI response and deal cards
+                    const aiResponse = document.createElement('div');
+                    aiResponse.className = 'message-text';
+                    aiResponse.textContent = parts[0];
+                    messageDiv.appendChild(aiResponse);
+                    
+                    // Add deal cards
+                    messageDiv.classList.add('deal-message');
+                    const dealsContainer = document.createElement('div');
+                    dealsContainer.innerHTML = parts[1];
+                    messageDiv.appendChild(dealsContainer);
+                } else if (text.includes('discount-items')) {
+                    // If we only have deal cards
+                    messageDiv.classList.add('deal-message');
+                    messageDiv.innerHTML = text;
+                } else {
+                    // Regular text message
+                    messageDiv.textContent = text;
+                }
+            } else {
+                messageDiv.textContent = text || '';
+            }
+
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = new Date().toLocaleTimeString();
+            messageDiv.appendChild(timeDiv);
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Add click handler for direction links
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.textContent.includes('📍 Want directions?')) {
+                const messageText = e.target.closest('.message-text');
+                if (messageText) {
+                    const storeName = messageText.textContent.match(/at (.*?)(?:\?|\.|$)/)?.[1];
+                    if (storeName) {
+                        // Instead of making an API call, directly show navigation message
+                        addMessage(`navigating to ${storeName}, Puducherry`, 'bot');
+                    }
+                }
+            }
+            
+            // Handle follow-up suggestions
+            if (e.target && e.target.classList.contains('suggestion-text')) {
+                const suggestion = e.target.textContent;
+                addMessage(suggestion, 'user');
+                sendMessage();
+            }
+        });
+
+        // Check authentication on page load
+        checkAuth();
+
+        window.showDealDetails = function(dealData) {
+            const modal = document.getElementById('dealModal');
+            const modalContent = document.getElementById('dealModalContent');
+            
+            // Format dates
+            const expiryDate = dealData.expiryDate ? new Date(dealData.expiryDate).toLocaleDateString() : 'No expiry';
+            const startDate = dealData.createdAt ? new Date(dealData.createdAt).toLocaleDateString() : 'Unknown';
+            
+            // Format prices if available
+            const originalPrice = dealData.originalPrice ? `₹${dealData.originalPrice}` : '';
+            const discountedPrice = dealData.discountedPrice ? `₹${dealData.discountedPrice}` : '';
+            
+            // Create modal content
+            modalContent.innerHTML = `
+                <img src="${dealData.imageUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'200\' viewBox=\'0 0 300 200\'%3E%3Crect width=\'300\' height=\'200\' fill=\'%23cccccc\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'18\' text-anchor=\'middle\' alignment-baseline=\'middle\' font-family=\'Arial, sans-serif\' fill=\'%23666666\'%3ENo Image%3C/text%3E%3C/svg%3E'}" 
+                     alt="${dealData.title || 'Deal'}" 
+                     class="deal-modal-image"
+                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'200\' viewBox=\'0 0 300 200\'%3E%3Crect width=\'300\' height=\'200\' fill=\'%23cccccc\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'18\' text-anchor=\'middle\' alignment-baseline=\'middle\' font-family=\'Arial, sans-serif\' fill=\'%23666666\'%3ENo Image%3C/text%3E%3C/svg%3E'">
+                
+                ${dealData.discountType ? `<div class="deal-modal-badge">${dealData.discountType}</div>` : ''}
+                
+                <div class="deal-modal-title">
+                    <span>${dealData.title || 'Untitled Deal'}</span>
+                    <i class="fas fa-heart wishlist-icon" 
+                       onclick="window.toggleWishlist(this, ${JSON.stringify(dealData).replace(/"/g, '&quot;')})"></i>
+                </div>
+                
+                ${(originalPrice || discountedPrice) ? `
+                    <div class="deal-modal-price">
+                        ${originalPrice ? `<span style="text-decoration: line-through; color: #666; font-size: 14px;">${originalPrice}</span>` : ''}
+                        ${discountedPrice ? `<span>${discountedPrice}</span>` : ''}
+                    </div>
+                ` : ''}
+                
+                <div class="deal-modal-description">
+                    ${dealData.description || 'No description available'}
+                </div>
+                
+                <div class="deal-modal-dates">
+                    <div class="deal-modal-date-item">
+                        <span>Start Date</span>
+                        <strong>${startDate}</strong>
+                    </div>
+                    <div class="deal-modal-date-item">
+                        <span>Expiry Date</span>
+                        <strong>${expiryDate}</strong>
+                    </div>
+                </div>
+                
+                <div class="deal-modal-info">
+                    <div class="deal-modal-info-section">
+                        <div class="shop-name-section">
+                            <h3>Shop Information</h3>
+                            <p>${dealData.retailerName || 'Unknown'}</p>
+                            <div class="shop-details">
+                                <div class="shop-detail-item">
+                                    <strong>Category:</strong> ${dealData.category || 'Uncategorized'}
+                                </div>
+                                ${dealData.brand ? `
+                                    <div class="shop-detail-item">
+                                        <strong>Brand:</strong> ${dealData.brand}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Show modal
+            modal.style.display = 'block';
+            
+            // Add back button functionality
+            const modalBackBtn = document.getElementById('modalBackBtn');
+            modalBackBtn.onclick = function(e) {
+                e.preventDefault();
+                modal.style.display = 'none';
+            }
+        };
+
+        window.toggleWishlist = async function(icon, dealData) {
+            try {
+                const currentUser = window.currentUser;
+                if (!currentUser) {
+                    alert('Please login to add items to wishlist');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Get user document reference from wishlist database
+                const userRef = doc(wishlistDb, "users", currentUser.uid);
+                const userDoc = await getDoc(userRef);
+                
+                let userData = {
+                    uid: currentUser.uid,
+                    email: currentUser.email || '',
+                    createdAt: new Date(),
+                    status: "active",
+                    wishlist: []
+                };
+
+                if (userDoc.exists()) {
+                    const existingData = userDoc.data();
+                    userData = {
+                        ...userData,
+                        ...existingData,
+                        wishlist: existingData.wishlist || []
+                    };
+                }
+
+                // Check if item is already in wishlist
+                const itemIndex = userData.wishlist.findIndex(item => item.dealId === dealData.id);
+
+                if (itemIndex === -1) {
+                    // Create wishlist item with only defined fields
+                    const wishlistItem = {
+                        dealId: dealData.id,
+                        createdAt: new Date()
+                    };
+
+                    // Add fields only if they are defined
+                    if (dealData.title) wishlistItem.title = dealData.title;
+                    if (dealData.description) wishlistItem.description = dealData.description;
+                    if (dealData.imageUrl) wishlistItem.imageUrl = dealData.imageUrl;
+                    if (dealData.originalPrice) wishlistItem.originalPrice = dealData.originalPrice;
+                    if (dealData.discountedPrice) wishlistItem.discountedPrice = dealData.discountedPrice;
+                    if (dealData.discountType) wishlistItem.discountType = dealData.discountType;
+                    if (dealData.retailerName) wishlistItem.retailerName = dealData.retailerName;
+                    if (dealData.category) wishlistItem.category = dealData.category;
+                    if (dealData.brand) wishlistItem.brand = dealData.brand;
+
+                    // Add to wishlist array
+                    userData.wishlist.push(wishlistItem);
+                    
+                    // Save to database
+                    if (!userDoc.exists()) {
+                        await setDoc(userRef, userData);
+                    } else {
+                        await updateDoc(userRef, {
+                            wishlist: userData.wishlist
+                        });
+                    }
+                    
+                    icon.classList.add('active');
+                    icon.style.color = '#ff6547';
+                } else {
+                    // Remove from wishlist array
+                    userData.wishlist.splice(itemIndex, 1);
+                    await updateDoc(userRef, {
+                        wishlist: userData.wishlist
+                    });
+                    icon.classList.remove('active');
+                    icon.style.color = '#666';
+                }
+            } catch (error) {
+                console.error('Error toggling wishlist:', error);
+                alert('Failed to update wishlist. Please try again.');
+            }
+        };
+    </script>
+</body>
+</html> 
+
+
+
+
+Chatbot.py
+
+
+
+

@@ -1,0 +1,3901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Interactive Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Add Font Awesome CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <!-- Load Leaflet first -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Then load MarkerCluster -->
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <!-- Add Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://unpkg.com/@mapbox/polyline@1.1.1/src/polyline.js"></script>
+  <style>
+    :root {
+      --primary-color: #1a73e8;
+      --secondary-color: #5f6368;
+      --background-color: #ffffff;
+      --surface-color: #f8f9fa;
+      --border-color: #dadce0;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background-color: var(--background-color);
+    }
+
+    body {
+      max-width: 420px;
+      margin: 0 auto;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #map {
+      flex: 1;
+      width: 100%;
+      height: 100vh;
+      background-color: var(--surface-color);
+      position: relative;
+      z-index: 1;
+      padding-bottom: 100px; /* Reduced from 130px since we removed some elements */
+    }
+
+    .search-container {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 400px;
+      z-index: 1000;
+    }
+
+    .search-bar {
+      background: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .controls {
+      position: fixed;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1000;
+    }
+
+    .control-button {
+      width: 40px;
+      height: 40px;
+      background: white;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      margin: 8px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .travel-modes {
+        display: none;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 480px;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      margin: 0 auto;
+    }
+
+    .bottom-nav a {
+      text-decoration: none;
+      font-size: 20px;
+      color: gray;
+      padding: 5px;
+      transition: color 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 20%;
+    }
+
+    .bottom-nav a.active, .bottom-nav a:hover {
+      color: #ff6347;
+    }
+
+    .bottom-nav a[aria-label="Home"]::after {
+      content: "Home";
+      display: block;
+      font-size: 12px;
+      color: gray;
+      text-align: center;
+    }
+
+    .bottom-nav a[aria-label="Map"]::after {
+      content: "Map";
+      display: block;
+      font-size: 12px;
+      color: gray;
+      text-align: center;
+    }
+
+    .bottom-nav a[aria-label="Trending"]::after {
+      content: "Trending";
+      display: block;
+      font-size: 12px;
+      color: gray;
+      text-align: center;
+    }
+
+    .bottom-nav a[aria-label="Favorites"]::after {
+      content: "Favorites";
+      display: block;
+      font-size: 12px;
+      color: gray;
+      text-align: center;
+    }
+
+    .bottom-nav a[aria-label="Notifications"]::after {
+      content: "Notifications";
+      display: block;
+      font-size: 12px;
+      color: gray;
+      text-align: center;
+    }
+
+    .nav-content {
+      display: flex;
+      justify-content: space-around;
+      padding: 0 16px;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-decoration: none;
+      color: #5f6368;
+      font-size: 12px;
+      padding: 8px;
+      border-radius: 8px;
+      transition: all 0.2s;
+      width: 20%;
+    }
+
+    .nav-item:hover {
+      background-color: var(--surface-color);
+    }
+
+    .nav-item.active {
+      color: var(--primary-color);
+    }
+
+    .nav-item i {
+      font-size: 24px;
+    }
+
+    .right-controls {
+      position: fixed;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 998;
+    }
+
+    .route-info {
+      position: fixed;
+      bottom: 140px; /* Adjusted to be above both navs */
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 400px;
+      z-index: 1000;
+    }
+
+    .search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      margin-top: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+      z-index: 1001;
+    }
+
+    .search-result-item {
+      padding: 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #e0e0e0;
+      transition: background-color 0.2s;
+    }
+
+    .search-result-item:hover {
+      background-color: #f5f5f5;
+    }
+
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .location-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--background-color);
+      border-radius: 8px;
+      box-shadow: 0 2px 6px var(--shadow-color);
+      margin-top: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .location-suggestions.active {
+      display: block;
+    }
+
+    .suggestion-item {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .suggestion-item:hover {
+      background: var(--surface-color);
+    }
+
+    .suggestion-icon {
+      color: var(--secondary-color);
+    }
+
+    .suggestion-details {
+      flex: 1;
+    }
+
+    .suggestion-main {
+      color: #3c4043;
+      margin-bottom: 4px;
+    }
+
+    .suggestion-secondary {
+      color: var(--secondary-color);
+      font-size: 12px;
+    }
+
+    @media (max-width: 420px) {
+      body {
+        max-width: 100%;
+      }
+
+      .bottom-nav {
+        max-width: 100%;
+      }
+
+      .search-container,
+      .travel-modes,
+      .route-info {
+        width: 96%;
+      }
+    }
+
+    @media (max-height: 600px) {
+      .travel-modes {
+        bottom: 70px;
+      }
+
+      .route-info {
+        bottom: 120px;
+      }
+    }
+
+    .custom-marker {
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-marker {
+      background: var(--primary-color);
+      border: 2px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Add styles for directions panel */
+    .directions-panel {
+      position: fixed;
+      top: 80px;
+      left: 10px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      max-width: 300px;
+      max-height: 70vh;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    .direction-step {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .direction-step:last-child {
+      border-bottom: none;
+    }
+
+    .custom-map-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .custom-map-controls > div {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .control-button {
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: background-color 0.3s;
+    }
+
+    .control-button:hover {
+      background-color: #f0f0f0;
+    }
+
+    .control-button i {
+      font-size: 20px;
+      color: #666;
+    }
+
+    .control-button.active {
+      background-color: #e3f2fd;
+    }
+
+    .control-button.active i {
+      color: #1a73e8;
+    }
+
+    .place-info-card {
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translate(-50%, 100%);
+      }
+      to {
+        transform: translate(-50%, 0);
+      }
+    }
+
+    .route-loading {
+      position: fixed;
+      bottom: 140px; /* Adjusted to be above both navs */
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+
+    .route-loading i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .start-button {
+      background: #1a73e8;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Google Sans', sans-serif;
+    }
+
+    .start-button:hover {
+      background: #1557b0;
+    }
+
+    .direction-step {
+      padding: 12px 16px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .direction-step:last-child {
+      border-bottom: none;
+    }
+
+    .direction-step i {
+      color: #1a73e8;
+      margin-top: 2px;
+    }
+
+    .directions-panel {
+      position: fixed;
+      top: 80px;
+      left: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      width: 300px;
+      max-height: 70vh;
+      z-index: 1000;
+      overflow: hidden;
+    }
+
+    @media (max-width: 420px) {
+      .directions-panel {
+        width: calc(100% - 20px);
+        left: 10px;
+      }
+    }
+
+    .app-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 480px;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+      z-index: 1001; /* Higher than the existing bottom nav */
+    }
+
+    .app-bottom-nav a {
+      text-decoration: none;
+      font-size: 20px;
+      color: gray;
+      padding: 5px;
+      transition: color 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .app-bottom-nav a.active, .app-bottom-nav a:hover {
+      color: #ff6347;
+    }
+
+    /* Map-specific navigation */
+    .map-nav {
+        position: fixed;
+        bottom: 70px; /* Position above the main bottom nav */
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 8px 0;
+        box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+        z-index: 999;
+        max-width: 480px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .nav-content {
+        display: flex;
+        justify-content: space-around;
+        padding: 0 16px;
+        max-width: 480px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        color: #5f6368;
+        font-size: 12px;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.2s;
+        width: 20%;
+    }
+
+    .nav-item:hover {
+        background-color: #f1f3f4;
+    }
+
+    .nav-item.active {
+        color: #1a73e8;
+    }
+
+    .nav-item i {
+        font-size: 24px;
+    }
+
+    /* Main bottom navigation */
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        max-width: 480px;
+        background: white;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        margin: 0 auto;
+    }
+
+    .bottom-nav a {
+        text-decoration: none;
+        font-size: 20px;
+        color: gray;
+        padding: 5px;
+        transition: color 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 20%;
+    }
+
+    .bottom-nav a.active, .bottom-nav a:hover {
+        color: #ff6347;
+    }
+
+    .bottom-nav a[aria-label="Home"]::after {
+        content: "Home";
+        display: block;
+        font-size: 12px;
+        color: gray;
+        text-align: center;
+    }
+
+    .bottom-nav a[aria-label="Map"]::after {
+        content: "Map";
+        display: block;
+        font-size: 12px;
+        color: gray;
+        text-align: center;
+    }
+
+    .bottom-nav a[aria-label="Trending"]::after {
+        content: "Trending";
+        display: block;
+        font-size: 12px;
+        color: gray;
+        text-align: center;
+    }
+
+    .bottom-nav a[aria-label="Favorites"]::after {
+        content: "Favorites";
+        display: block;
+        font-size: 12px;
+        color: gray;
+        text-align: center;
+    }
+
+    .bottom-nav a[aria-label="Notifications"]::after {
+        content: "Notifications";
+        display: block;
+        font-size: 12px;
+        color: gray;
+        text-align: center;
+    }
+
+    /* Adjust other elements to account for both navigation bars */
+    #map {
+        padding-bottom: 100px; /* Reduced from 130px since we removed some elements */
+    }
+
+    .route-loading {
+        bottom: 140px; /* Adjusted to be above both navs */
+    }
+
+    .directions-panel {
+        bottom: 140px; /* Adjusted to be above both navs */
+    }
+
+    .deal-marker {
+        background: white;
+        border-radius: 8px;
+        padding: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        border: 1px solid rgba(0,0,0,0.1);
+        transition: transform 0.2s ease;
+    }
+    
+    .deal-marker:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    .deal-marker-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 100px;
+    }
+    
+    .deal-marker-badge {
+        background: linear-gradient(135deg, #ff6547, #ff3d00);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(255,101,71,0.3);
+    }
+    
+    .deal-marker-title {
+        font-size: 12px;
+        color: #333;
+        text-align: center;
+        max-width: 120px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 500;
+    }
+    
+    .deal-popup {
+        max-width: 280px;
+        padding: 12px;
+    }
+    
+    .deal-popup-image {
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .deal-popup h3 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .deal-discount {
+        background: linear-gradient(135deg, #ff6547, #ff3d00);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0 0 12px 0;
+        display: inline-block;
+        box-shadow: 0 2px 4px rgba(255,101,71,0.3);
+    }
+    
+    .deal-description {
+        font-size: 14px;
+        color: #666;
+        margin: 0 0 12px 0;
+        line-height: 1.4;
+    }
+    
+    .deal-expiry {
+        font-size: 12px;
+        color: #999;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .deal-expiry i {
+        font-size: 14px;
+    }
+
+    .floating-directions-button {
+      position: fixed;
+      bottom: 120px; /* Adjusted position */
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a73e8;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .floating-directions-button:hover {
+      background: #1557b0;
+      transform: translateX(-50%) scale(1.05);
+    }
+
+    .floating-directions-button i {
+      font-size: 20px;
+    }
+
+    .multi-destination-container {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 16px;
+        z-index: 1000;
+        width: 90%;
+        max-width: 400px;
+    }
+
+    .destination-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin: 12px 0;
+    }
+
+    .destination-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .destination-item:last-child {
+        border-bottom: none;
+    }
+
+    .destination-number {
+        background: #1a73e8;
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+
+    .destination-actions {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
+    }
+
+    .multi-destination-controls {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Remove the duplicate header section -->
+  <div class="search-container">
+    <div class="search-bar">
+      <i class="material-icons">search</i>
+      <input type="text" class="search-input" placeholder="Search places..." id="searchInput">
+      <i class="material-icons" onclick="startVoiceSearch()" style="cursor: pointer;">mic</i>
+    </div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+
+  <!-- Add profile icon -->
+  <div class="header">
+    <div class="profile-icon"></div>
+  </div>
+
+  <div class="controls">
+    <button class="control-button" onclick="zoomIn()" title="Zoom In">
+      <i class="material-icons">add</i>
+    </button>
+    <button class="control-button" onclick="zoomOut()" title="Zoom Out">
+      <i class="material-icons">remove</i>
+    </button>
+    <button class="control-button" onclick="toggleMapType()" title="Change Map Type">
+      <i class="material-icons">layers</i>
+    </button>
+    <button class="control-button" onclick="getCurrentLocation()" title="My Location">
+      <i class="material-icons">my_location</i>
+    </button>
+  </div>
+
+  <!-- Add the map-specific navigation -->
+  <div class="map-nav">
+    <div class="nav-content">
+        <a href="#" class="nav-item" onclick="handleNavigationAction('go')">
+            <i class="material-icons">place</i>
+            <span>Go</span>
+        </a>
+        <a href="#" class="nav-item" onclick="handleNavigationAction('saved')">
+            <i class="material-icons">saved</i>
+            <span>Saved</span>
+        </a>
+        <a href="#" class="nav-item" onclick="handleNavigationAction('contribute')">
+            <i class="material-icons">add_circle</i>
+            <span>Contribute</span>
+        </a>
+        <a href="#" class="nav-item" onclick="handleNavigationAction('updates')">
+            <i class="material-icons">updates</i>
+            <span>Updates</span>
+        </a>
+    </div>
+  </div>
+
+  <!-- Add the main app navigation -->
+  <nav class="bottom-nav">
+    <a href="home.html" aria-label="Home"><i class="fas fa-home"></i></a>
+    <a href="map.html" class="active" aria-label="Map"><i class="fas fa-map-marker-alt"></i></a>
+    <a href="hotdeal.html" aria-label="Trending"><i class="fa-solid fa-fire"></i></a>
+    <a href="wishlist.html" aria-label="Favorites"><i class="fas fa-heart"></i></a>
+    <a href="notify.html" id="notification-btn" aria-label="Notifications"><i class="fas fa-bell"></i></a>
+  </nav>
+
+  <div id="map"></div>
+
+  <!-- Remove duplicate script tags -->
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBhgQ-3m6DcXGZlDg6kq2Jx7Ei4ORHVJPE",
+        authDomain: "login-form-f98c7.firebaseapp.com",
+        projectId: "login-form-f98c7",
+        storageBucket: "login-form-f98c7.firebasestorage.app",
+        messagingSenderId: "174637943387",
+        appId: "1:174637943387:web:45fe45fe97f2699ee04d7e",
+        measurementId: "G-QX0XXWB1Q6"
+    };
+
+    // Initialize Firebase
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
+    // Initialize Firestore
+    const db = firebase.firestore();
+    
+    // Initialize deals database with the second configuration
+    const dealsFirebaseConfig = {
+        apiKey: "AIzaSyBQ3UhKKRW19wD2oyjV-QbXp61FguwqSak",
+        authDomain: "seller-6975f.firebaseapp.com",
+        projectId: "seller-6975f",
+        storageBucket: "seller-6975f.firebasestorage.app",
+        messagingSenderId: "123675528821",
+        appId: "1:123675528821:web:bd9aac9a48bbad3a09723c",
+        measurementId: "G-5E37M5R2RM"
+    };
+
+    // Initialize second Firebase app for deals
+    let dealsApp;
+    let dealsDb;
+    try {
+        // Check if the deals app already exists
+        if (firebase.apps.length > 1) {
+            dealsApp = firebase.app('dealsApp');
+            console.log('Using existing deals app instance');
+        } else {
+            dealsApp = firebase.initializeApp(dealsFirebaseConfig, 'dealsApp');
+            console.log('Initialized new deals app instance');
+        }
+        
+        dealsDb = dealsApp.firestore();
+        dealsDb.settings({
+            timestampsInSnapshots: true,
+            merge: true  // Add this to merge settings instead of overriding
+        });
+        
+        console.log('Deals database initialized successfully');
+    } catch (error) {
+        console.error('Error initializing deals database:', error);
+        // Fallback to main database if deals database fails
+        dealsDb = db;
+        console.log('Falling back to main database for deals');
+    }
+
+    // Initialize wishlist database
+    const wishlistDb = db.collection('wishlist');
+
+    // Global variables
+    let currentUser = null;
+    let map = null;
+    let userMarker = null;
+    let destinationMarker = null;
+    let routeLine = null;
+    let currentRoute = null;
+    let searchMarkers = [];
+    let dealMarkers = null;
+    let markerCluster = null;
+
+    // Add new global variables for multi-destination navigation
+    let multiDestinations = [];
+    let multiRouteLines = [];
+    let multiDestinationMarkers = [];
+
+    // Update the updateProfileIcon function
+    function updateProfileIcon() {
+        try {
+            let profileIcon = document.querySelector('.profile-icon');
+            if (!profileIcon) {
+                // Create profile icon if it doesn't exist
+                const header = document.createElement('div');
+                header.className = 'header';
+                document.body.insertBefore(header, document.body.firstChild);
+                
+                profileIcon = document.createElement('div');
+                profileIcon.className = 'profile-icon';
+                header.appendChild(profileIcon);
+            }
+            
+            // Only update if the element exists
+            if (profileIcon) {
+                profileIcon.innerHTML = currentUser ? 
+                    '<i class="material-icons">account_circle</i>' : 
+                    '<i class="material-icons">person</i>';
+            }
+        } catch (error) {
+            console.error('Error updating profile icon:', error);
+        }
+    }
+
+    // Update the setupEventListeners function
+    function setupEventListeners() {
+        // Search input
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce(function(e) {
+                if (e.target.value.length > 2) {
+                    searchPlace(e.target.value);
+                }
+            }, 500));
+        }
+        
+        // Travel modes
+        const modeButtons = document.querySelectorAll('.mode-button');
+        if (modeButtons.length > 0) {
+            modeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    modeButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    selectedMode = button.dataset.mode;
+                    
+                    // Recalculate route if exists
+                    if (routingControl && routingControl.getWaypoints().length > 1) {
+                        routingControl.setWaypoints(routingControl.getWaypoints());
+                    }
+                });
+            });
+        }
+
+        // Bottom navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        if (navItems.length > 0) {
+            navItems.forEach(item => {
+                item.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const action = item.querySelector('span').textContent.toLowerCase();
+                    await handleNavigationAction(action);
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                });
+            });
+        }
+
+        // Voice search
+        const voiceSearchButton = document.querySelector('.controls .material-icons');
+        if (voiceSearchButton) {
+            voiceSearchButton.addEventListener('click', startVoiceSearch);
+        }
+
+        // Profile icon
+        const profileIcon = document.querySelector('.profile-icon');
+        if (profileIcon) {
+            profileIcon.addEventListener('click', showProfileMenu);
+        }
+
+        // Add Firebase authentication state listener
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().onAuthStateChanged((user) => {
+                currentUser = user;
+                updateProfileIcon();
+            });
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                const searchResults = document.getElementById('searchResults');
+                if (searchResults) {
+                    searchResults.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    // Update the window.onload function
+    window.onload = function() {
+        // Wait for all scripts to load
+        if (typeof L === 'undefined') {
+            console.error('Leaflet not loaded');
+            return;
+        }
+
+        initMap();
+        setupEventListeners();
+        
+        // Initialize search functionality
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce(function(e) {
+                if (e.target.value.length > 2) {
+                    searchPlace(e.target.value);
+                }
+            }, 500));
+        }
+        
+        // Check for navigation request from chatbot
+        const navigationData = localStorage.getItem('navigationDestination');
+        if (navigationData) {
+            const { coordinates, storeName } = JSON.parse(navigationData);
+            
+            // Clear any existing markers and routes
+            if (destinationMarker) {
+                map.removeLayer(destinationMarker);
+            }
+            if (routeLine) {
+                map.removeLayer(routeLine);
+            }
+            
+            // Add destination marker
+            destinationMarker = L.marker(coordinates, {
+                icon: L.divIcon({
+                    className: 'destination-marker',
+                    html: '<i class="material-icons" style="color: #d32f2f;">place</i>',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32]
+                })
+            }).addTo(map);
+            
+            // Get user's current location and calculate route
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const { latitude, longitude } = position.coords;
+                        if (!userMarker) {
+                            userMarker = L.marker([latitude, longitude], {
+                                icon: L.divIcon({
+                                    className: 'user-marker',
+                                    html: '<div style="background-color: #1a73e8; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white;"></div>',
+                                    iconSize: [16, 16],
+                                    iconAnchor: [8, 8]
+                                })
+                            }).addTo(map);
+                        }
+                        
+                        // Calculate and show route
+                        calculateAndShowRoute([latitude, longitude], coordinates);
+                        
+                        // Clear the navigation data from localStorage
+                        localStorage.removeItem('navigationDestination');
+                    },
+                    error => {
+                        console.error('Error getting location:', error);
+                        alert('Please enable location services to get directions');
+                    }
+                );
+            }
+        }
+    };
+
+    function initMap() {
+      try {
+        // Create the map first
+        map = L.map('map', {
+          center: [11.9416, 79.8083],
+          zoom: 13,
+          zoomControl: false
+        });
+
+        // Add the base tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Initialize marker cluster group
+            markerCluster = L.markerClusterGroup({
+                maxClusterRadius: 50,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true,
+                disableClusteringAtZoom: 16
+            });
+            map.addLayer(markerCluster);
+            console.log('Marker cluster initialized successfully');
+
+        // Initialize dealMarkers layer
+        dealMarkers = new L.LayerGroup();
+        map.addLayer(dealMarkers);
+            console.log('Deal markers layer initialized');
+
+        // Add zoom event listener
+        map.on('zoomend', function() {
+            const zoom = map.getZoom();
+            if (zoom >= 15 && destinationMarker) {
+                const popupContent = destinationMarker.getPopup()?.getContent();
+                const storeNameMatch = popupContent ? popupContent.match(/<h3>(.*?)<\/h3>/)?.[1] : null;
+                if (storeNameMatch) {
+                    showDealMarkers(storeNameMatch, destinationMarker.getLatLng());
+                }
+            }
+        });
+
+        // Initialize map controls
+        initializeMapControls();
+
+        // Get initial user location
+        getCurrentLocation();
+
+        console.log('Map initialized successfully');
+      } catch (error) {
+        console.error('Error initializing map:', error);
+        alert('Error initializing map. Please refresh the page.');
+      }
+    }
+
+    // Update the initializeMapControls function
+    function initializeMapControls() {
+        // Create a custom control container on the right side
+        const controlContainer = L.control({ position: 'topright' });
+
+        controlContainer.onAdd = function(map) {
+            const container = L.DomUtil.create('div', 'custom-map-controls');
+            container.style.cssText = `
+                background: white;
+                padding: 10px;
+                border-radius: 8px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                margin-right: 10px;
+                margin-top: 80px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                z-index: 999;
+            `;
+
+            // Add main menu button
+            const menuButton = L.DomUtil.create('button', 'menu-button', container);
+            menuButton.innerHTML = '<i class="material-icons">menu</i>';
+            menuButton.style.cssText = `
+                background: none;
+                border: none;
+                padding: 8px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 4px;
+            `;
+            menuButton.onmouseover = () => menuButton.style.background = '#f1f3f4';
+            menuButton.onmouseout = () => menuButton.style.background = 'none';
+
+            // Create dropdown menu
+            const dropdownMenu = L.DomUtil.create('div', 'dropdown-menu', container);
+            dropdownMenu.style.cssText = `
+                position: absolute;
+                top: 100%;
+                right: 0;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                padding: 8px;
+                display: none;
+                min-width: 200px;
+                z-index: 998;
+                margin-top: 4px;
+            `;
+
+            // Add zoom controls section
+            const zoomSection = L.DomUtil.create('div', 'control-section', dropdownMenu);
+            zoomSection.innerHTML = `
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <div style="color: #5f6368; font-size: 12px; margin-bottom: 4px;">Zoom</div>
+                    <div style="display: flex; gap: 4px;">
+                        <button onclick="map.zoomIn()" class="control-button" title="Zoom In">
+                            <i class="material-icons">add</i>
+                        </button>
+                        <button onclick="map.zoomOut()" class="control-button" title="Zoom Out">
+                            <i class="material-icons">remove</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add map type controls section
+            const mapTypeSection = L.DomUtil.create('div', 'control-section', dropdownMenu);
+            mapTypeSection.innerHTML = `
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <div style="color: #5f6368; font-size: 12px; margin-bottom: 4px;">Map Type</div>
+                    <div style="display: flex; gap: 4px;">
+                        <button onclick="setMapType('streets')" class="control-button" title="Streets View">
+                            <i class="material-icons">map</i>
+                        </button>
+                        <button onclick="setMapType('satellite')" class="control-button" title="Satellite View">
+                            <i class="material-icons">satellite</i>
+                        </button>
+                        <button onclick="setMapType('terrain')" class="control-button" title="Terrain View">
+                            <i class="material-icons">terrain</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add location controls section
+            const locationSection = L.DomUtil.create('div', 'control-section', dropdownMenu);
+            locationSection.innerHTML = `
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <div style="color: #5f6368; font-size: 12px; margin-bottom: 4px;">Location</div>
+                    <div style="display: flex; gap: 4px;">
+                        <button onclick="centerOnUserLocation()" class="control-button" title="My Location">
+                            <i class="material-icons">my_location</i>
+                        </button>
+                        <button onclick="toggleNavigationMode()" class="control-button" title="Navigation">
+                            <i class="material-icons">navigation</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add multi-store navigation section
+            const multiStoreSection = L.DomUtil.create('div', 'control-section', dropdownMenu);
+            multiStoreSection.innerHTML = `
+                <div style="padding: 8px;">
+                    <div style="color: #5f6368; font-size: 12px; margin-bottom: 4px;">Multi-Store</div>
+                    <div style="display: flex; gap: 4px;">
+                        <button onclick="toggleMultiStoreMode()" class="control-button" title="Add Shop">
+                            <i class="material-icons">add_location</i>
+                        </button>
+                        <button onclick="startMultiDestinationNavigation()" class="control-button" title="Start Navigation">
+                            <i class="material-icons">directions</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add styles for control buttons
+            const style = L.DomUtil.create('style', '', document.head);
+            style.textContent = `
+                .control-button {
+                    background: none;
+                    border: none;
+                    padding: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 4px;
+                }
+                .control-button:hover {
+                    background: #f1f3f4;
+                }
+                .control-button.active {
+                    background: #e3f2fd;
+                }
+                .control-button.active i {
+                    color: #1a73e8;
+                }
+                .control-button i {
+                    font-size: 20px;
+                    color: #5f6368;
+                }
+            `;
+
+            // Toggle dropdown menu
+            menuButton.onclick = () => {
+                const isVisible = dropdownMenu.style.display === 'block';
+                dropdownMenu.style.display = isVisible ? 'none' : 'block';
+            };
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!container.contains(e.target)) {
+                    dropdownMenu.style.display = 'none';
+                }
+            });
+
+            return container;
+        };
+
+        controlContainer.addTo(map);
+    }
+
+    // Add new function to toggle multi-store mode
+    function toggleMultiStoreMode() {
+        const addShopButton = document.querySelector('[onclick="toggleMultiStoreMode()"]');
+        const isActive = addShopButton.classList.contains('active');
+        
+        if (isActive) {
+            // Deactivate multi-store mode
+            addShopButton.classList.remove('active');
+            closeMultiDestination();
+            clearMultiDestinations();
+        } else {
+            // Activate multi-store mode
+            addShopButton.classList.add('active');
+            updateMultiDestinationUI();
+        }
+    }
+
+    function setupEventListeners() {
+        // Search input
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', debounce(function(e) {
+                if (e.target.value.length > 2) {
+                    searchPlace(e.target.value);
+                }
+            }, 500));
+        }
+        
+        // Travel modes
+        const modeButtons = document.querySelectorAll('.mode-button');
+        if (modeButtons.length > 0) {
+            modeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    modeButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    selectedMode = button.dataset.mode;
+                    
+                    // Recalculate route if exists
+                    if (routingControl && routingControl.getWaypoints().length > 1) {
+                        routingControl.setWaypoints(routingControl.getWaypoints());
+                    }
+                });
+            });
+        }
+
+        // Bottom navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        if (navItems.length > 0) {
+            navItems.forEach(item => {
+                item.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const action = item.querySelector('span').textContent.toLowerCase();
+                    await handleNavigationAction(action);
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    item.classList.add('active');
+                });
+            });
+        }
+
+        // Voice search
+        const voiceSearchButton = document.querySelector('.controls .material-icons');
+        if (voiceSearchButton) {
+            voiceSearchButton.addEventListener('click', startVoiceSearch);
+        }
+
+        // Profile icon
+        const profileIcon = document.querySelector('.profile-icon');
+        if (profileIcon) {
+            profileIcon.addEventListener('click', showProfileMenu);
+        }
+
+        // Add Firebase authentication state listener
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().onAuthStateChanged((user) => {
+                currentUser = user;
+                updateProfileIcon();
+            });
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                const searchResults = document.getElementById('searchResults');
+                if (searchResults) {
+                    searchResults.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    function showMenu() {
+      const menu = document.createElement('div');
+      menu.className = 'menu-overlay';
+      menu.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 2000;
+      `;
+
+      const menuContent = document.createElement('div');
+      menuContent.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 80%;
+        max-width: 300px;
+        height: 100%;
+        background: white;
+        padding: 20px;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+        z-index: 2001;
+      `;
+
+      const menuItems = [
+        { icon: 'home', text: 'Home' },
+        { icon: 'work', text: 'Work' },
+        { icon: 'favorite', text: 'Saved Places' },
+        { icon: 'history', text: 'Recent Searches' },
+        { icon: 'settings', text: 'Settings' }
+      ];
+
+      menuItems.forEach(item => {
+        const menuItem = document.createElement('div');
+        menuItem.style.cssText = `
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          cursor: pointer;
+          border-radius: 8px;
+        `;
+        menuItem.innerHTML = `
+          <i class="material-icons">${item.icon}</i>
+          <span>${item.text}</span>
+        `;
+        menuItem.addEventListener('mouseover', () => menuItem.style.background = '#f1f3f4');
+        menuItem.addEventListener('mouseout', () => menuItem.style.background = 'none');
+        menuContent.appendChild(menuItem);
+      });
+
+      menu.appendChild(menuContent);
+      document.body.appendChild(menu);
+
+      menu.addEventListener('click', (e) => {
+        if (e.target === menu) {
+          document.body.removeChild(menu);
+        }
+      });
+    }
+
+    function showProfileMenu() {
+      const menu = document.createElement('div');
+      menu.style.cssText = `
+        position: absolute;
+        top: 60px;
+        right: 16px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 8px;
+        z-index: 1000;
+        min-width: 200px;
+      `;
+
+      const menuItems = [
+        { icon: 'person', text: 'Your Profile' },
+        { icon: 'favorite', text: 'Saved Places' },
+        { icon: 'edit', text: 'Your Contributions' },
+        { icon: 'settings', text: 'Settings' }
+      ];
+
+      menuItems.forEach(item => {
+        const menuItem = document.createElement('div');
+        menuItem.style.cssText = `
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          cursor: pointer;
+          border-radius: 8px;
+        `;
+        menuItem.innerHTML = `
+          <i class="material-icons">${item.icon}</i>
+          <span>${item.text}</span>
+        `;
+        menuItem.addEventListener('mouseover', () => menuItem.style.background = '#f1f3f4');
+        menuItem.addEventListener('mouseout', () => menuItem.style.background = 'none');
+        menu.appendChild(menuItem);
+      });
+
+      document.body.appendChild(menu);
+
+      document.addEventListener('click', function closeMenu(e) {
+        if (!menu.contains(e.target) && e.target !== document.querySelector('.profile-icon')) {
+          document.body.removeChild(menu);
+          document.removeEventListener('click', closeMenu);
+        }
+      });
+    }
+
+    async function handleNavigationAction(action) {
+      // Remove active class from all nav items
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      
+      // Add active class to clicked item
+      const clickedItem = document.querySelector(`[onclick="handleNavigationAction('${action}')"]`);
+      if (clickedItem) {
+          clickedItem.classList.add('active');
+      }
+
+      switch(action) {
+        case 'go':
+          showNavigationOptions();
+          break;
+        case 'saved':
+          await showSavedPlaces();
+          break;
+        case 'contribute':
+          showContributeOptions();
+          break;
+        case 'updates':
+          showUpdates();
+          break;
+      }
+    }
+
+    async function showSavedPlaces() {
+      const savedPlacesContainer = document.createElement('div');
+      savedPlacesContainer.className = 'saved-places-container';
+        savedPlacesContainer.style.cssText = `
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            padding: 16px;
+            z-index: 1000;
+            width: 90%;
+            max-width: 400px;
+            max-height: 60vh;
+            overflow-y: auto;
+        `;
+
+      savedPlacesContainer.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3>Saved Places</h3>
+                <button onclick="closeSavedPlaces()" style="padding: 8px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+                    <i class="material-icons">close</i>
+                </button>
+        </div>
+            <div class="saved-places-list" style="display: grid; gap: 12px;"></div>
+      `;
+
+      document.body.appendChild(savedPlacesContainer);
+
+      const savedPlacesList = savedPlacesContainer.querySelector('.saved-places-list');
+      
+      try {
+            // Get saved places from localStorage
+            const savedPlaces = JSON.parse(localStorage.getItem('savedPlaces') || '[]');
+
+            if (savedPlaces.length === 0) {
+                savedPlacesList.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #5f6368;">
+                        <i class="material-icons" style="font-size: 48px; color: #1a73e8;">bookmark_border</i>
+                        <p style="margin-top: 8px;">No saved places yet</p>
+                    </div>
+                `;
+          return;
+        }
+
+            savedPlaces.forEach((place, index) => {
+          const placeElement = document.createElement('div');
+          placeElement.className = 'saved-place-item';
+                placeElement.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 12px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: background-color 0.2s;
+                `;
+                placeElement.onmouseover = () => placeElement.style.background = '#f1f3f4';
+                placeElement.onmouseout = () => placeElement.style.background = '#f8f9fa';
+
+          placeElement.innerHTML = `
+                    <i class="material-icons" style="color: #1a73e8;">place</i>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500;">${place.name}</div>
+                        <div style="color: #5f6368; font-size: 12px;">${place.description || ''}</div>
+            </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="getDirections([${place.latitude}, ${place.longitude}])" style="
+                            padding: 8px;
+                            border: none;
+                            border-radius: 4px;
+                            background: #1a73e8;
+                            color: white;
+                            cursor: pointer;
+                        ">
+                            <i class="material-icons">directions</i>
+                        </button>
+                        <button onclick="removeSavedPlace(${index})" style="
+                            padding: 8px;
+                            border: none;
+                            border-radius: 4px;
+                            background: #f1f3f4;
+                            cursor: pointer;
+                        ">
+                            <i class="material-icons">delete</i>
+                        </button>
+                    </div>
+                `;
+
+                // Add click handler to show place on map
+                placeElement.onclick = () => {
+                    if (place.latitude && place.longitude) {
+                        map.setView([place.latitude, place.longitude], 15);
+                        // Clear previous markers
+                        if (destinationMarker) {
+                            map.removeLayer(destinationMarker);
+                        }
+                        // Add marker for the saved place
+                        destinationMarker = L.marker([place.latitude, place.longitude], {
+                            icon: L.divIcon({
+                                className: 'destination-marker',
+                                html: '<i class="material-icons" style="color: #d32f2f;">place</i>',
+                                iconSize: [32, 32],
+                                iconAnchor: [16, 32]
+                            })
+                        }).addTo(map);
+                    }
+                };
+
+          savedPlacesList.appendChild(placeElement);
+        });
+        } catch (error) {
+            console.error('Error loading saved places:', error);
+            savedPlacesList.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #5f6368;">
+                    <i class="material-icons" style="font-size: 48px; color: #d32f2f;">error</i>
+                    <p style="margin-top: 8px;">Error loading saved places</p>
+                </div>
+            `;
+        }
+    }
+
+    function closeSavedPlaces() {
+        const container = document.querySelector('.saved-places-container');
+        if (container) {
+            container.remove();
+        }
+    }
+
+    function removeSavedPlace(index) {
+        try {
+            const savedPlaces = JSON.parse(localStorage.getItem('savedPlaces') || '[]');
+            savedPlaces.splice(index, 1);
+            localStorage.setItem('savedPlaces', JSON.stringify(savedPlaces));
+
+            // Refresh the saved places list
+            const container = document.querySelector('.saved-places-container');
+            if (container) {
+                container.remove();
+            }
+            showSavedPlaces();
+        } catch (error) {
+            console.error('Error removing saved place:', error);
+            alert('Error removing saved place. Please try again.');
+        }
+    }
+
+    function savePlaceToWishlist(place) {
+        try {
+            const savedPlaces = JSON.parse(localStorage.getItem('savedPlaces') || '[]');
+            
+            // Check if place is already saved
+            const isAlreadySaved = savedPlaces.some(p => 
+                p.latitude === parseFloat(place.lat) && 
+                p.longitude === parseFloat(place.lon)
+            );
+
+            if (isAlreadySaved) {
+                // Show already saved message
+                const message = document.createElement('div');
+                message.style.cssText = `
+                    position: fixed;
+                    bottom: 100px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: #f1f3f4;
+                    color: #5f6368;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                    z-index: 1000;
+                `;
+                message.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="material-icons">info</i>
+                        <span>This place is already saved</span>
+                    </div>
+                `;
+                document.body.appendChild(message);
+                setTimeout(() => message.remove(), 3000);
+                return;
+            }
+
+            // Add new place
+            savedPlaces.push({
+                name: place.display_name.split(',')[0],
+                description: place.display_name,
+                latitude: parseFloat(place.lat),
+                longitude: parseFloat(place.lon),
+                timestamp: new Date().toISOString()
+            });
+
+            localStorage.setItem('savedPlaces', JSON.stringify(savedPlaces));
+
+            // Show success message
+            const successMessage = document.createElement('div');
+            successMessage.style.cssText = `
+                position: fixed;
+                bottom: 100px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #1a73e8;
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                z-index: 1000;
+            `;
+            successMessage.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="material-icons">check_circle</i>
+                    <span>Place saved successfully</span>
+                </div>
+            `;
+            document.body.appendChild(successMessage);
+            setTimeout(() => successMessage.remove(), 3000);
+
+            // Update the save button icon if it exists
+            const saveButton = document.querySelector(`[onclick="savePlaceToWishlist(${JSON.stringify(place).replace(/"/g, '&quot;')})"]`);
+            if (saveButton) {
+                saveButton.innerHTML = '<i class="material-icons">bookmark</i>';
+                saveButton.style.color = '#1a73e8';
+            }
+      } catch (error) {
+            console.error('Error saving place:', error);
+            alert('Error saving place. Please try again.');
+      }
+    }
+
+    async function showNearbyPlaces() {
+      const nearbyPlacesContainer = document.createElement('div');
+      nearbyPlacesContainer.className = 'nearby-places-container';
+      nearbyPlacesContainer.innerHTML = `
+        <div class="nearby-places-header">
+          <h2>Nearby Places</h2>
+          <button class="close-button material-icons">close</button>
+        </div>
+        <div class="nearby-places-list"></div>
+      `;
+
+      document.body.appendChild(nearbyPlacesContainer);
+
+      const nearbyPlacesList = nearbyPlacesContainer.querySelector('.nearby-places-list');
+      
+      try {
+        const dealsSnapshot = await dealsDb.collection('deals').get();
+        const deals = [];
+        dealsSnapshot.forEach(doc => {
+          deals.push({ id: doc.id, ...doc.data() });
+        });
+
+        if (deals.length === 0) {
+          nearbyPlacesList.innerHTML = '<p class="no-places">No nearby places found</p>';
+          return;
+        }
+
+        deals.forEach(deal => {
+          const placeElement = document.createElement('div');
+          placeElement.className = 'nearby-place-item';
+          placeElement.innerHTML = `
+            <span class="material-icons">${deal.icon || 'local_offer'}</span>
+            <div class="place-details">
+              <h3>${deal.name}</h3>
+              <p>${deal.description}</p>
+              <p class="deal-price">${deal.price}</p>
+            </div>
+            <button class="material-icons save-place" data-id="${deal.id}">bookmark_border</button>
+          `;
+          nearbyPlacesList.appendChild(placeElement);
+        });
+
+        nearbyPlacesContainer.querySelector('.close-button').addEventListener('click', () => {
+          document.body.removeChild(nearbyPlacesContainer);
+        });
+
+        nearbyPlacesList.querySelectorAll('.save-place').forEach(button => {
+          button.addEventListener('click', async (e) => {
+            if (!currentUser) {
+              alert('Please sign in to save places');
+              return;
+            }
+            const dealId = e.currentTarget.dataset.id;
+            const deal = deals.find(d => d.id === dealId);
+            if (deal) {
+              await savePlaceToWishlist(deal);
+              e.currentTarget.textContent = 'bookmark';
+            }
+          });
+        });
+      } catch (error) {
+        console.error('Error fetching nearby places:', error);
+        nearbyPlacesList.innerHTML = '<p class="error">Error loading nearby places</p>';
+      }
+    }
+
+    function showContributeOptions() {
+      const menu = document.createElement('div');
+      menu.className = 'contribute-menu';
+      menu.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 16px;
+        z-index: 1000;
+        width: 90%;
+        max-width: 400px;
+      `;
+
+      menu.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3>Add to Maps</h3>
+          <button onclick="closeContributeMenu()" style="padding: 8px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div style="display: grid; gap: 12px;">
+          <button onclick="showAddPlaceForm()" style="padding: 12px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="material-icons">add_location</i>
+              <div>
+                <div style="font-weight: bold;">Add a Place</div>
+                <div style="color: #5f6368; font-size: 12px;">Add a new business or location to the map</div>
+              </div>
+            </div>
+          </button>
+          <button onclick="showAddDealForm()" style="padding: 12px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="material-icons">local_offer</i>
+              <div>
+                <div style="font-weight: bold;">Add a Deal</div>
+                <div style="color: #5f6368; font-size: 12px;">Share deals and offers from your business</div>
+              </div>
+            </div>
+          </button>
+          <button onclick="showEditLocationForm()" style="padding: 12px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="material-icons">edit_location</i>
+              <div>
+                <div style="font-weight: bold;">Edit Location</div>
+                <div style="color: #5f6368; font-size: 12px;">Update business hours or location details</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(menu);
+    }
+
+    function closeContributeMenu() {
+      const menu = document.querySelector('.contribute-menu');
+      if (menu) {
+        document.body.removeChild(menu);
+      }
+    }
+
+    function showAddPlaceForm() {
+      closeContributeMenu();
+      const menu = document.createElement('div');
+      menu.className = 'add-place-menu';
+      menu.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 16px;
+        z-index: 1000;
+        width: 90%;
+        max-width: 400px;
+      `;
+
+      menu.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3>Add a New Place</h3>
+          <button onclick="closeAddPlaceForm()" style="padding: 8px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div style="display: grid; gap: 12px;">
+          <input type="text" placeholder="Place name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <select style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <option>Restaurant</option>
+            <option>Store</option>
+            <option>Park</option>
+            <option>Other</option>
+          </select>
+          <button onclick="submitNewPlace()" style="padding: 12px; border: none; border-radius: 8px; background: #1a73e8; color: white; cursor: pointer;">
+            Submit
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(menu);
+    }
+
+    function closeAddPlaceForm() {
+      const menu = document.querySelector('.add-place-menu');
+      if (menu) {
+        document.body.removeChild(menu);
+      }
+    }
+
+    function showReviewForm() {
+      closeContributeMenu();
+      const menu = document.createElement('div');
+      menu.className = 'review-menu';
+      menu.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 16px;
+        z-index: 1000;
+        width: 90%;
+        max-width: 400px;
+      `;
+
+      menu.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3>Write a Review</h3>
+          <button onclick="closeReviewForm()" style="padding: 8px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div style="display: grid; gap: 12px;">
+          <input type="text" placeholder="Place name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <textarea placeholder="Your review" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; height: 100px;"></textarea>
+          <div style="display: flex; gap: 8px;">
+            <i class="material-icons" style="color: #fbbc04; cursor: pointer;">star</i>
+            <i class="material-icons" style="color: #fbbc04; cursor: pointer;">star</i>
+            <i class="material-icons" style="color: #fbbc04; cursor: pointer;">star</i>
+            <i class="material-icons" style="color: #fbbc04; cursor: pointer;">star</i>
+            <i class="material-icons" style="color: #fbbc04; cursor: pointer;">star</i>
+          </div>
+          <button onclick="submitReview()" style="padding: 12px; border: none; border-radius: 8px; background: #1a73e8; color: white; cursor: pointer;">
+            Submit Review
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(menu);
+    }
+
+    function closeReviewForm() {
+      const menu = document.querySelector('.review-menu');
+      if (menu) {
+        document.body.removeChild(menu);
+      }
+    }
+
+    function showPhotoUpload() {
+      closeContributeMenu();
+      const menu = document.createElement('div');
+      menu.className = 'photo-upload-menu';
+      menu.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 16px;
+        z-index: 1000;
+        width: 90%;
+        max-width: 400px;
+      `;
+
+      menu.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3>Upload Photos</h3>
+          <button onclick="closePhotoUpload()" style="padding: 8px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div style="display: grid; gap: 12px;">
+          <input type="text" placeholder="Place name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <div style="border: 2px dashed #ddd; border-radius: 8px; padding: 20px; text-align: center; cursor: pointer;">
+            <i class="material-icons" style="font-size: 48px; color: #5f6368;">cloud_upload</i>
+            <div style="margin-top: 8px;">Click to upload photos</div>
+          </div>
+          <button onclick="submitPhotos()" style="padding: 12px; border: none; border-radius: 8px; background: #1a73e8; color: white; cursor: pointer;">
+            Upload Photos
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(menu);
+    }
+
+    function closePhotoUpload() {
+      const menu = document.querySelector('.photo-upload-menu');
+      if (menu) {
+        document.body.removeChild(menu);
+      }
+    }
+
+    function submitPhotos() {
+      alert('Photos uploaded successfully!');
+      closePhotoUpload();
+    }
+
+    function showUpdates() {
+      const menu = document.createElement('div');
+      menu.className = 'updates-menu';
+      menu.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 16px;
+        z-index: 1000;
+        width: 90%;
+        max-width: 400px;
+      `;
+
+      const updates = [
+        { title: 'New Deal Available', time: '2 hours ago', type: 'local_offer', description: '50% off on summer collection' },
+        { title: 'Traffic Alert', time: '5 hours ago', type: 'traffic', description: 'Heavy traffic on route to destination' },
+        { title: 'Store Opening', time: '1 day ago', type: 'store', description: 'New branch opening in your area' },
+        { title: 'Deal Expiring Soon', time: '2 days ago', type: 'warning', description: 'Limited time offer ending tomorrow' }
+      ];
+
+      menu.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3>Recent Updates</h3>
+          <button onclick="closeUpdates()" style="padding: 8px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div style="display: grid; gap: 8px;">
+          ${updates.map(update => `
+            <div style="padding: 12px; border-radius: 8px; background: #f1f3f4;">
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <i class="material-icons" style="color: #1a73e8;">${update.type}</i>
+                <div style="flex: 1;">
+                  <div style="font-weight: 500; margin-bottom: 4px;">${update.title}</div>
+                  <div style="color: #5f6368; font-size: 12px; margin-bottom: 4px;">${update.description}</div>
+                  <div style="color: #5f6368; font-size: 12px;">${update.time}</div>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      document.body.appendChild(menu);
+    }
+
+    function closeUpdates() {
+      const menu = document.querySelector('.updates-menu');
+      if (menu) {
+        document.body.removeChild(menu);
+      }
+    }
+
+    function getUpdateIcon(type) {
+      const icons = {
+        restaurant: 'restaurant',
+        traffic: 'traffic',
+        warning: 'warning',
+        review: 'rate_review',
+        default: 'info'
+      };
+      return icons[type] || icons.default;
+    }
+
+    function getCurrentLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            const { latitude, longitude } = position.coords;
+            
+            // Create or update user marker
+            if (userMarker) {
+              userMarker.setLatLng([latitude, longitude]);
+            } else {
+              userMarker = L.marker([latitude, longitude], {
+                icon: L.divIcon({
+                  className: 'user-marker',
+                  html: '<div style="background-color: #1a73e8; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white;"></div>',
+                  iconSize: [16, 16],
+                  iconAnchor: [8, 8]
+                })
+              }).addTo(map);
+            }
+
+            map.setView([latitude, longitude], 15);
+          },
+          function(error) {
+            console.error('Error getting location:', error);
+            alert('Unable to get your location. Please enable location services.');
+          }
+        );
+      } else {
+        alert('Geolocation is not supported by your browser');
+      }
+    }
+
+    function searchPlace(query) {
+        if (!query.trim()) return;
+
+        // Show loading state
+        const searchResults = document.getElementById('searchResults');
+        if (!searchResults) {
+            console.error('Search results container not found');
+            return;
+        }
+
+        searchResults.innerHTML = '<div style="padding: 12px; text-align: center;"><i class="material-icons">sync</i> Searching...</div>';
+        searchResults.style.display = 'block';
+
+        // Clear previous markers
+        searchMarkers.forEach(marker => map.removeLayer(marker));
+        searchMarkers = [];
+
+        // Parse the query for location-specific searches
+        const queryParts = query.toLowerCase().split(' ');
+        let searchTerm = query;
+        let locationTerm = '';
+        
+        // Check if query contains location indicators
+        const locationIndicators = ['in', 'at', 'near', 'around', 'close to'];
+        for (let i = 0; i < queryParts.length - 1; i++) {
+            if (locationIndicators.includes(queryParts[i])) {
+                searchTerm = queryParts.slice(0, i).join(' ');
+                locationTerm = queryParts.slice(i + 1).join(' ');
+                break;
+            }
+        }
+
+        // If no location specified, use current location
+        let searchUrl;
+        if (locationTerm) {
+            // Search in specific location
+            searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&city=${encodeURIComponent(locationTerm)}&countrycodes=in&limit=10`;
+        } else if (userMarker) {
+            // Search near current location
+            const currentLocation = userMarker.getLatLng();
+            searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&lat=${currentLocation.lat}&lon=${currentLocation.lng}&radius=50000&countrycodes=in&limit=10`;
+        } else {
+            // Default to broader search
+            searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&countrycodes=in&limit=10`;
+        }
+
+        fetch(searchUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!Array.isArray(data) || data.length === 0) {
+                    searchResults.innerHTML = '<div style="padding: 12px; text-align: center;">No results found</div>';
+                    return;
+                }
+
+                // Sort results by distance if we have a current location
+                if (userMarker) {
+                    const currentLocation = userMarker.getLatLng();
+                    data.sort((a, b) => {
+                        const distA = calculateDistance(currentLocation.lat, currentLocation.lng, parseFloat(a.lat), parseFloat(a.lon));
+                        const distB = calculateDistance(currentLocation.lat, currentLocation.lng, parseFloat(b.lat), parseFloat(b.lon));
+                        return distA - distB;
+                    });
+                }
+
+                searchResults.innerHTML = data.map((place, index) => {
+                    const distance = userMarker ? 
+                        calculateDistance(
+                            userMarker.getLatLng().lat,
+                            userMarker.getLatLng().lng,
+                            parseFloat(place.lat),
+                            parseFloat(place.lon)
+                        ).toFixed(1) + ' km away' : '';
+                    
+                    return `
+                    <div class="search-result-item" onclick="selectPlace(${JSON.stringify(place).replace(/"/g, '&quot;')})">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <i class="material-icons">place</i>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500;">${place.display_name.split(',')[0]}</div>
+                                <div style="font-size: 12px; color: #5f6368;">${place.display_name}</div>
+                                ${distance ? `<div style="font-size: 12px; color: #1a73e8;">${distance}</div>` : ''}
+                            </div>
+                            <button onclick="event.stopPropagation(); savePlaceToWishlist(${JSON.stringify(place).replace(/"/g, '&quot;')})" style="
+                                background: none;
+                                border: none;
+                                padding: 8px;
+                                cursor: pointer;
+                                color: #5f6368;
+                            ">
+                                <i class="material-icons">bookmark_border</i>
+                            </button>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+
+                // Add markers for each result
+                data.forEach(place => {
+                    const marker = L.marker([place.lat, place.lon], {
+                        icon: L.divIcon({
+                            className: 'search-marker',
+                            html: '<i class="material-icons" style="color: #1a73e8;">place</i>',
+                            iconSize: [32, 32],
+                            iconAnchor: [16, 32]
+                        })
+                    }).addTo(map);
+                    
+                    const distance = userMarker ? 
+                        calculateDistance(
+                            userMarker.getLatLng().lat,
+                            userMarker.getLatLng().lng,
+                            parseFloat(place.lat),
+                            parseFloat(place.lon)
+                        ).toFixed(1) + ' km away' : '';
+                    
+                    marker.bindPopup(`
+                        <div style="padding: 8px;">
+                            <div style="font-weight: 500;">${place.display_name.split(',')[0]}</div>
+                            <div style="font-size: 12px; color: #5f6368;">${place.display_name}</div>
+                            ${distance ? `<div style="font-size: 12px; color: #1a73e8; margin-top: 4px;">${distance}</div>` : ''}
+                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <button onclick="getDirections([${place.lat}, ${place.lon}])" style="
+                                    flex: 1;
+                                background: #1a73e8;
+                                color: white;
+                                border: none;
+                                    padding: 8px;
+                                border-radius: 4px;
+                                cursor: pointer;
+                                display: flex;
+                                align-items: center;
+                                    justify-content: center;
+                                gap: 4px;
+                            ">
+                                <i class="material-icons" style="font-size: 16px;">directions</i>
+                                Directions
+                            </button>
+                                <button onclick="savePlaceToWishlist(${JSON.stringify(place).replace(/"/g, '&quot;')})" style="
+                                    background: #f1f3f4;
+                                    border: none;
+                                    padding: 8px;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                ">
+                                    <i class="material-icons">bookmark_border</i>
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                    
+                    searchMarkers.push(marker);
+                });
+
+                // Fit map to show all markers
+                if (searchMarkers.length > 0) {
+                    const bounds = L.latLngBounds(searchMarkers.map(m => m.getLatLng()));
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+            })
+            .catch(error => {
+                console.error('Error searching:', error);
+                searchResults.innerHTML = '<div style="padding: 12px; text-align: center;">Error searching places. Please try again.</div>';
+            });
+    }
+
+    function selectPlace(place) {
+        console.log('=== Starting selectPlace ===');
+        console.log('Full place data:', place);
+        
+        const lat = parseFloat(place.lat);
+        const lon = parseFloat(place.lon);
+        console.log('Parsed coordinates:', lat, lon);
+
+        // Check if multi-store mode is active
+        const addShopButton = document.querySelector('[onclick="toggleMultiStoreMode()"]');
+        if (addShopButton && addShopButton.classList.contains('active')) {
+            addToMultiDestination(place);
+            return;
+        }
+
+        // Original single destination logic
+        searchMarkers.forEach(m => map.removeLayer(m));
+        searchMarkers = [];
+        if (routeLine) {
+            map.removeLayer(routeLine);
+            routeLine = null;
+        }
+        if (destinationMarker) {
+            map.removeLayer(destinationMarker);
+        }
+
+        destinationMarker = L.marker([lat, lon], {
+            icon: L.divIcon({
+                className: 'destination-marker',
+                html: '<i class="material-icons" style="color: #d32f2f;">place</i>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            })
+        }).addTo(map);
+
+        const storeName = place.display_name.split(',')[0].trim();
+        showDealMarkers(storeName, [lat, lon]);
+        addFloatingDirectionsButton([lat, lon], storeName);
+    }
+
+    function addFloatingDirectionsButton(coordinates, storeName) {
+        // Remove existing floating button if any
+        const existingButton = document.querySelector('.floating-directions-button');
+        if (existingButton) {
+            existingButton.remove();
+        }
+
+        // Create new floating button
+        const button = document.createElement('div');
+        button.className = 'floating-directions-button';
+        button.innerHTML = `
+                    <i class="material-icons">directions</i>
+            <span>Get Directions to ${storeName}</span>
+        `;
+
+        // Add click handler
+        button.onclick = () => {
+            getDirections(coordinates);
+            button.remove(); // Remove button after getting directions
+        };
+
+        document.body.appendChild(button);
+    }
+
+    function getDirections(destination) {
+        // Remove floating directions button
+        const floatingButton = document.querySelector('.floating-directions-button');
+        if (floatingButton) {
+            floatingButton.remove();
+        }
+
+        // Clear any existing route info and directions panel
+        const existingRouteInfo = document.querySelector('.route-info');
+        if (existingRouteInfo) {
+            existingRouteInfo.remove();
+        }
+        const existingDirectionsPanel = document.querySelector('.directions-panel');
+        if (existingDirectionsPanel) {
+            existingDirectionsPanel.remove();
+        }
+
+        if (!userMarker) {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const { latitude, longitude } = position.coords;
+                    if (!userMarker) {
+          userMarker = L.marker([latitude, longitude], {
+            icon: L.divIcon({
+              className: 'user-marker',
+                                html: '<div style="background-color: #1a73e8; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white;"></div>',
+                                iconSize: [16, 16],
+                                iconAnchor: [8, 8]
+            })
+          }).addTo(map);
+                    }
+                    calculateAndShowRoute([latitude, longitude], destination);
+        },
+        error => {
+          console.error('Error getting location:', error);
+                    alert('Please enable location services to get directions');
+                }
+            );
+        } else {
+            const userLatLng = userMarker.getLatLng();
+            calculateAndShowRoute([userLatLng.lat, userLatLng.lng], destination);
+        }
+    }
+
+    async function showDealMarkers(storeName, coordinates) {
+        console.log('=== Starting showDealMarkers ===');
+        console.log('Store name:', storeName);
+        console.log('Coordinates:', coordinates);
+        
+        try {
+            // Clear existing deal markers
+            if (markerCluster) {
+                markerCluster.clearLayers();
+            }
+            
+            // Try fetching from Firebase
+            console.log('Attempting to fetch deals from Firebase...');
+            
+            if (!dealsDb) {
+                throw new Error('Deals database not initialized');
+            }
+
+            // Query for specific store using retailerName, limit to 2 deals
+            console.log('Querying for retailerName:', storeName);
+            const dealsSnapshot = await dealsDb.collection('deals')
+                .where('retailerName', '==', storeName)
+                .where('status', '==', 'active')
+                .limit(2)  // Limit to 2 deals
+                .get();
+
+            console.log('Query result:', {
+                size: dealsSnapshot.size,
+                empty: dealsSnapshot.empty,
+                docs: dealsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    data: doc.data()
+                }))
+            });
+
+            if (!dealsSnapshot.empty) {
+                const deals = [];
+                dealsSnapshot.forEach(doc => {
+                    const deal = doc.data();
+                    console.log('Processing deal:', deal);
+                    deals.push({
+                        id: doc.id,
+                        ...deal
+                    });
+                });
+                
+                // Add markers for each deal (maximum 2)
+                deals.forEach((deal, index) => {
+                    const offset = 0.0001;
+                    const angle = (index * 180) * (Math.PI / 180);
+                    const offsetLat = coordinates[0] + (offset * Math.sin(angle));
+                    const offsetLng = coordinates[1] + (offset * Math.cos(angle));
+                    
+                    const marker = createDealMarker(deal, [offsetLat, offsetLng]);
+                    markerCluster.addLayer(marker);
+                });
+
+                // Ensure markers are visible
+                const bounds = markerCluster.getBounds();
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                } else {
+                    map.setView(coordinates, 15);
+                }
+            } else {
+                console.log('No deals found for store:', storeName);
+                L.popup()
+                    .setLatLng(coordinates)
+                    .setContent(`No active deals found for ${storeName}`)
+                    .openOn(map);
+            }
+        } catch (error) {
+            console.error('Error in showDealMarkers:', error);
+            L.popup()
+                .setLatLng(coordinates)
+                .setContent('Error loading deals. Please try again.')
+                .openOn(map);
+        }
+    }
+
+    // Function to create deal marker
+    function createDealMarker(deal, coordinates) {
+        console.log('Creating marker for deal:', deal);
+        
+        // Validate required fields
+        if (!deal.title) {
+            console.warn('Deal missing title:', deal);
+            deal.title = 'Special Offer';
+        }
+        
+        const marker = L.marker(coordinates, {
+            icon: L.divIcon({
+                className: 'deal-marker',
+                html: `<div class="deal-marker-content">
+                    <div class="deal-marker-badge">${deal.discountType || 'Deal'}</div>
+                    <div class="deal-marker-title">${deal.title}</div>
+                </div>`,
+                iconSize: [140, 60]
+            })
+        });
+
+        const popupContent = `
+            <div class="deal-popup">
+                <img src="${deal.imageUrl || 'default-image.jpg'}" alt="${deal.title}" class="deal-popup-image">
+                <h3>${deal.title}</h3>
+                <p class="deal-discount">${deal.discountType || 'Deal'}</p>
+                <p class="deal-description">${deal.description || 'Check out this special offer!'}</p>
+                <p class="deal-expiry">
+                    <i class="material-icons">schedule</i>
+                    Valid until: ${deal.expiryDate ? new Date(deal.expiryDate).toLocaleDateString() : 'Ongoing'}
+                </p>
+            </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        return marker;
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Earth's radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    async function calculateAndShowRoute(start, end, travelMode) {
+        // Show loading indicator
+        const loadingCard = document.createElement('div');
+        loadingCard.className = 'route-loading';
+        loadingCard.innerHTML = '<div style="text-align: center; padding: 16px;"><i class="material-icons">sync</i> Calculating route...</div>';
+        document.body.appendChild(loadingCard);
+
+        try {
+            // Get selected travel mode with fallback to 'driving'
+            const selectedMode = document.querySelector('.mode-button.active')?.dataset?.mode || 'driving';
+            const profile = selectedMode === 'walking' ? 'foot-walking' : 
+                          selectedMode === 'bicycling' ? 'cycling-regular' : 
+                          'driving-car';
+
+            // OpenRouteService API endpoint
+            const apiKey = '5b3ce3597851110001cf624875873fb6067949a9b27e61d567aaee17';
+            const url = `https://api.openrouteservice.org/v2/directions/${profile}`;
+
+            const response = await fetch(`${url}?api_key=${apiKey}&start=${start[1]},${start[0]}&end=${end[1]},${end[0]}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.features && data.features.length > 0) {
+                const route = data.features[0];
+                currentRoute = route;
+                
+                // Show route on map
+                showRouteDetails(route, end);
+                
+                // Show directions panel
+                showDirectionsPanel(route);
+                
+                // Show deal markers if destination has a popup
+                if (destinationMarker && destinationMarker.getPopup()) {
+                    const popupContent = destinationMarker.getPopup().getContent();
+                    const storeNameMatch = popupContent ? popupContent.match(/<h3>(.*?)<\/h3>/)?.[1] : null;
+                    if (storeNameMatch) {
+                        await showDealMarkers(storeNameMatch, end);
+                    }
+                }
+            } else {
+                throw new Error('No route found');
+            }
+        } catch (error) {
+            console.error('Error calculating route:', error);
+            alert('Error calculating route. Please try again.');
+        } finally {
+            const loadingElement = document.querySelector('.route-loading');
+            if (loadingElement) {
+                loadingElement.remove();
+            }
+        }
+    }
+
+    function showRouteDetails(route, destination) {
+        // Clear existing route if any
+        if (routeLine) {
+            map.removeLayer(routeLine);
+        }
+
+        // Get coordinates from the route geometry
+        const coordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+        
+        // Create and add the route line
+        routeLine = L.polyline(coordinates, {
+            color: '#1a73e8',
+            weight: 5,
+            opacity: 0.7
+        }).addTo(map);
+
+        // Fit map to show entire route
+        map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+
+        // Show route info
+        showRouteInfo(route);
+    }
+
+    function showRouteInfo(route) {
+        let info = document.querySelector('.route-info');
+        if (!info) {
+            info = document.createElement('div');
+            info.className = 'route-info';
+            document.body.appendChild(info);
+        }
+
+        const distance = (route.properties.segments[0].distance / 1000).toFixed(1);
+        const duration = Math.round(route.properties.segments[0].duration / 60);
+        
+        // Get selected mode with fallback to 'driving'
+        const selectedMode = document.querySelector('.mode-button.active')?.dataset?.mode || 'driving';
+
+        info.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 20px; font-weight: 500;">${duration} min</div>
+                    <div style="color: #666;">${distance} km · ${selectedMode}</div>
+                </div>
+                <button onclick="startNavigation()" class="start-button">
+                    <i class="material-icons">navigation</i>
+                    Start
+                </button>
+            </div>
+        `;
+    }
+
+    function startNavigation() {
+        // First, close all existing popup boxes and panels
+        const elementsToClose = [
+            '.route-info',
+            '.directions-panel',
+            '.search-results',
+            '.place-info-card',
+            '.navigation-options-menu',
+            '.contribute-menu',
+            '.updates-menu',
+            '.review-menu',
+            '.photo-upload-menu',
+            '.saved-places-container',
+            '.nearby-places-container'
+        ];
+
+        elementsToClose.forEach(selector => {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.remove();
+            }
+        });
+
+        // Clear search input
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        if (!routeLine || !destinationMarker) {
+            alert('Please select a destination first');
+            return;
+        }
+
+        // Create navigation interface
+        const navigationInterface = document.createElement('div');
+        navigationInterface.className = 'navigation-interface';
+        navigationInterface.style.cssText = `
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 16px;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 420px;
+            margin: 0 auto;
+        `;
+
+        // Get the current route information
+        const distance = routeLine ? (routeLine.getLatLngs().length > 0 ? calculateRouteDistance(routeLine.getLatLngs()) : 0) : 0;
+        const duration = Math.round((distance / 1000) * 3); // Rough estimate: 3 minutes per kilometer
+
+        navigationInterface.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="material-icons" style="color: #1a73e8; font-size: 24px;">navigation</i>
+                    <div>
+                        <div style="font-weight: 500; font-size: 18px;">Navigation Active</div>
+                        <div style="color: #5f6368; font-size: 14px;">${(distance/1000).toFixed(1)} km · ${duration} min</div>
+                    </div>
+                </div>
+                <button onclick="stopNavigation()" style="
+                    background: #1a73e8;
+                    color: white;
+                    border: none;
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                ">
+                    <i class="material-icons">close</i>
+                    End
+                </button>
+            </div>
+            <div class="next-direction" style="
+                background: #f1f3f4;
+                padding: 12px;
+                border-radius: 8px;
+                margin-bottom: 12px;
+            ">
+                <div style="color: #5f6368; font-size: 12px;">Next direction</div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                    <i class="material-icons" style="color: #1a73e8;">straight</i>
+                    <span>Follow the route</span>
+                </div>
+            </div>
+            <div class="navigation-controls" style="display: flex; justify-content: space-around;">
+                <button onclick="toggleNavigationView('map')" class="nav-control-button">
+                    <i class="material-icons">map</i>
+                    Map
+                </button>
+                <button onclick="toggleNavigationView('satellite')" class="nav-control-button">
+                    <i class="material-icons">satellite</i>
+                    Satellite
+                </button>
+                <button onclick="recenterMap()" class="nav-control-button">
+                    <i class="material-icons">my_location</i>
+                    Recenter
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(navigationInterface);
+
+        // Add styles for navigation interface
+        const navigationStyles = `
+            .nav-control-button {
+                background: none;
+                border: none;
+                padding: 8px;
+                cursor: pointer;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+                color: #5f6368;
+                font-size: 12px;
+            }
+
+            .nav-control-button:hover {
+                color: #1a73e8;
+            }
+
+            .nav-control-button i {
+                font-size: 20px;
+            }
+        `;
+        
+        document.head.insertAdjacentHTML('beforeend', `<style>${navigationStyles}</style>`);
+
+        // Start tracking user's position
+        if (navigator.geolocation) {
+            const watchId = navigator.geolocation.watchPosition(
+                function(position) {
+                    const { latitude, longitude } = position.coords;
+                    if (userMarker) {
+                        userMarker.setLatLng([latitude, longitude]);
+                    }
+                    
+                    // Update the map view to follow user
+                    map.setView([latitude, longitude], map.getZoom());
+
+                    // Update distance and ETA
+                    if (destinationMarker) {
+                        const remainingDistance = calculateDistance(
+                            latitude,
+                            longitude,
+                            destinationMarker.getLatLng().lat,
+                            destinationMarker.getLatLng().lng
+                        );
+                        
+                        const remainingTime = Math.round((remainingDistance / 1000) * 3); // Rough estimate
+                        updateNavigationInfo(remainingDistance, remainingTime);
+                    }
+                },
+                function(error) {
+                    console.error('Error tracking location:', error);
+                    alert('Unable to track location. Please check your GPS settings.');
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                }
+            );
+
+            // Store watch ID to clear on navigation stop
+            navigationInterface.dataset.watchId = watchId;
+        }
+
+        // Center map on user location with appropriate zoom
+        if (userMarker) {
+            map.setView(userMarker.getLatLng(), 18);
+        }
+    }
+
+    // Add helper functions for navigation
+    function calculateRouteDistance(latLngs) {
+        let distance = 0;
+        for (let i = 1; i < latLngs.length; i++) {
+            distance += latLngs[i].distanceTo(latLngs[i - 1]);
+        }
+        return distance;
+    }
+
+    function updateNavigationInfo(distance, duration) {
+        const navigationInterface = document.querySelector('.navigation-interface');
+        if (navigationInterface) {
+            const infoDiv = navigationInterface.querySelector('div > div:nth-child(2)');
+            if (infoDiv) {
+                infoDiv.innerHTML = `${(distance/1000).toFixed(1)} km · ${duration} min`;
+            }
+        }
+    }
+
+    function toggleNavigationView(type) {
+        if (type === 'satellite') {
+            setMapType('satellite');
+        } else {
+            setMapType('streets');
+        }
+    }
+
+    function recenterMap() {
+        if (userMarker) {
+            map.setView(userMarker.getLatLng(), 18);
+        }
+    }
+
+    // Update the stopNavigation function
+    function stopNavigation() {
+        // Remove navigation interface
+        const navigationInterface = document.querySelector('.navigation-interface');
+        if (navigationInterface) {
+            // Clear the location watch
+            if (navigationInterface.dataset.watchId) {
+                navigator.geolocation.clearWatch(parseInt(navigationInterface.dataset.watchId));
+            }
+            navigationInterface.remove();
+        }
+
+        // Clear route line
+        if (routeLine) {
+            map.removeLayer(routeLine);
+            routeLine = null;
+        }
+
+        // Clear destination marker
+        if (destinationMarker) {
+            map.removeLayer(destinationMarker);
+            destinationMarker = null;
+        }
+
+        // Reset map view to user location
+        if (userMarker) {
+            map.setView(userMarker.getLatLng(), 15);
+        }
+
+        // Reset map type to streets
+        setMapType('streets');
+    }
+
+    function toggleMapType() {
+      const types = Object.keys(MAP_TYPES);
+      const currentIndex = types.indexOf(currentMapType);
+      const nextIndex = (currentIndex + 1) % types.length;
+      currentMapType = types[nextIndex];
+
+      map.eachLayer((layer) => {
+        if (layer instanceof L.TileLayer) {
+          map.removeLayer(layer);
+        }
+      });
+
+      L.tileLayer(MAP_TYPES[currentMapType], {
+        maxZoom: 19
+      }).addTo(map);
+    }
+
+    function zoomIn() {
+        map.setZoom(map.getZoom() + 1);
+    }
+
+    function zoomOut() {
+        map.setZoom(map.getZoom() - 1);
+    }
+
+    function rotateMap() {
+        map.setBearing(map.getBearing() + 90);
+    }
+
+    function startVoiceSearch() {
+      if ('webkitSpeechRecognition' in window) {
+        const recognition = new webkitSpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        
+        recognition.onstart = () => {
+                const micIcon = document.querySelector('.controls .material-icons');
+          micIcon.style.color = '#1a73e8';
+        };
+        
+        recognition.onend = () => {
+                const micIcon = document.querySelector('.controls .material-icons');
+          micIcon.style.color = '';
+        };
+        
+        recognition.onresult = (event) => {
+                const searchInput = document.querySelector('.search-input');
+          searchInput.value = event.results[0][0].transcript;
+                searchPlace(searchInput.value);
+        };
+        
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+          alert('Error with voice recognition. Please try again.');
+        };
+        
+        recognition.start();
+      } else {
+        alert('Voice search is not supported in your browser');
+      }
+    }
+
+    function updateProfileIcon() {
+      const profileIcon = document.querySelector('.profile-icon');
+      if (currentUser) {
+        profileIcon.innerHTML = '<i class="material-icons">account_circle</i>';
+      } else {
+        profileIcon.innerHTML = '<i class="material-icons">person</i>';
+      }
+    }
+
+    async function savePlaceToWishlist(deal) {
+      if (!currentUser) {
+        alert('Please sign in to save places');
+        return;
+      }
+
+      try {
+        await wishlistDb
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('savedPlaces')
+          .add({
+            name: deal.name,
+            description: deal.description,
+            price: deal.price,
+            icon: deal.icon || 'local_offer',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+      } catch (error) {
+        console.error('Error saving place:', error);
+        alert('Error saving place. Please try again.');
+      }
+    }
+
+    function showNavigationOptions() {
+      const menu = document.createElement('div');
+      menu.className = 'navigation-options-menu';
+      menu.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 16px;
+        z-index: 1000;
+        width: 90%;
+        max-width: 400px;
+      `;
+
+      menu.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3>Navigation Options</h3>
+          <button onclick="closeNavigationOptions()" style="padding: 8px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div style="display: grid; gap: 12px;">
+          <button onclick="startNavigation('driving')" style="padding: 12px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="material-icons">directions_car</i>
+              <div>
+                <div style="font-weight: bold;">Drive</div>
+                <div style="color: #5f6368; font-size: 12px;">Best route by car</div>
+              </div>
+            </div>
+          </button>
+          <button onclick="startNavigation('walking')" style="padding: 12px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="material-icons">directions_walk</i>
+              <div>
+                <div style="font-weight: bold;">Walk</div>
+                <div style="color: #5f6368; font-size: 12px;">Walking directions</div>
+              </div>
+            </div>
+          </button>
+          <button onclick="startNavigation('bicycling')" style="padding: 12px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="material-icons">directions_bike</i>
+              <div>
+                <div style="font-weight: bold;">Bike</div>
+                <div style="color: #5f6368; font-size: 12px;">Bicycle route</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(menu);
+    }
+
+    function closeNavigationOptions() {
+      const menu = document.querySelector('.navigation-options-menu');
+      if (menu) {
+        document.body.removeChild(menu);
+      }
+    }
+
+    function submitReview() {
+      const placeInput = document.querySelector('.review-menu input[placeholder="Place name"]');
+      const reviewText = document.querySelector('.review-menu textarea');
+      const stars = document.querySelectorAll('.review-menu .material-icons[style*="color: #fbbc04"]').length;
+
+      if (!placeInput.value.trim()) {
+        alert('Please enter a place name');
+        return;
+      }
+
+      if (!reviewText.value.trim()) {
+        alert('Please enter your review');
+        return;
+      }
+
+      if (stars === 0) {
+        alert('Please select a rating');
+        return;
+      }
+
+      // Close the review menu
+      closeReviewForm();
+      alert('Review submitted successfully!');
+    }
+
+    // Utility functions
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Utility function to decode polyline
+    function decodePolyline(encoded) {
+        let points = [];
+        let index = 0, len = encoded.length;
+        let lat = 0, lng = 0;
+
+        while (index < len) {
+            let shift = 0, result = 0;
+            let byte;
+            do {
+                byte = encoded.charCodeAt(index++) - 63;
+                result |= (byte & 0x1f) << shift;
+                shift += 5;
+            } while (byte >= 0x20);
+            let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                byte = encoded.charCodeAt(index++) - 63;
+                result |= (byte & 0x1f) << shift;
+                shift += 5;
+            } while (byte >= 0x20);
+            let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            points.push([lat * 1e-5, lng * 1e-5]);
+        }
+        return points;
+    }
+
+    // Add this code after the map initialization
+    function initializeMapControls() {
+        // Create a custom control container on the right side
+        const controlContainer = L.control({ position: 'topright' });
+
+        controlContainer.onAdd = function(map) {
+            const container = L.DomUtil.create('div', 'custom-map-controls');
+            container.style.cssText = `
+                background: white;
+                padding: 10px;
+                border-radius: 8px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                margin-right: 10px;
+                margin-top: 80px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                z-index: 999;
+            `;
+
+            // Add main menu button
+            const menuButton = L.DomUtil.create('button', 'menu-button', container);
+            menuButton.innerHTML = '<i class="material-icons">menu</i>';
+            menuButton.style.cssText = `
+                background: none;
+                border: none;
+                padding: 8px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 4px;
+            `;
+            menuButton.onmouseover = () => menuButton.style.background = '#f1f3f4';
+            menuButton.onmouseout = () => menuButton.style.background = 'none';
+
+            // Create dropdown menu
+            const dropdownMenu = L.DomUtil.create('div', 'dropdown-menu', container);
+            dropdownMenu.style.cssText = `
+                position: absolute;
+                top: 100%;
+                right: 0;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                padding: 8px;
+                display: none;
+                min-width: 200px;
+                z-index: 998;
+                margin-top: 4px;
+            `;
+
+            // Add zoom controls section
+            const zoomSection = L.DomUtil.create('div', 'control-section', dropdownMenu);
+            zoomSection.innerHTML = `
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <div style="color: #5f6368; font-size: 12px; margin-bottom: 4px;">Zoom</div>
+                    <div style="display: flex; gap: 4px;">
+                        <button onclick="map.zoomIn()" class="control-button" title="Zoom In">
+                            <i class="material-icons">add</i>
+                        </button>
+                        <button onclick="map.zoomOut()" class="control-button" title="Zoom Out">
+                            <i class="material-icons">remove</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add map type controls section
+            const mapTypeSection = L.DomUtil.create('div', 'control-section', dropdownMenu);
+            mapTypeSection.innerHTML = `
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <div style="color: #5f6368; font-size: 12px; margin-bottom: 4px;">Map Type</div>
+                    <div style="display: flex; gap: 4px;">
+                        <button onclick="setMapType('streets')" class="control-button" title="Streets View">
+                            <i class="material-icons">map</i>
+                        </button>
+                        <button onclick="setMapType('satellite')" class="control-button" title="Satellite View">
+                            <i class="material-icons">satellite</i>
+                        </button>
+                        <button onclick="setMapType('terrain')" class="control-button" title="Terrain View">
+                            <i class="material-icons">terrain</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add location controls section
+            const locationSection = L.DomUtil.create('div', 'control-section', dropdownMenu);
+            locationSection.innerHTML = `
+                <div style="padding: 8px; border-bottom: 1px solid #eee;">
+                    <div style="color: #5f6368; font-size: 12px; margin-bottom: 4px;">Location</div>
+                    <div style="display: flex; gap: 4px;">
+                        <button onclick="centerOnUserLocation()" class="control-button" title="My Location">
+                            <i class="material-icons">my_location</i>
+                        </button>
+                        <button onclick="toggleNavigationMode()" class="control-button" title="Navigation">
+                            <i class="material-icons">navigation</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add multi-store navigation section
+            const multiStoreSection = L.DomUtil.create('div', 'control-section', dropdownMenu);
+            multiStoreSection.innerHTML = `
+                <div style="padding: 8px;">
+                    <div style="color: #5f6368; font-size: 12px; margin-bottom: 4px;">Multi-Store</div>
+                    <div style="display: flex; gap: 4px;">
+                        <button onclick="toggleMultiStoreMode()" class="control-button" title="Add Shop">
+                            <i class="material-icons">add_location</i>
+                        </button>
+                        <button onclick="startMultiDestinationNavigation()" class="control-button" title="Start Navigation">
+                            <i class="material-icons">directions</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add styles for control buttons
+            const style = L.DomUtil.create('style', '', document.head);
+            style.textContent = `
+                .control-button {
+                    background: none;
+                    border: none;
+                    padding: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 4px;
+                }
+                .control-button:hover {
+                    background: #f1f3f4;
+                }
+                .control-button.active {
+                    background: #e3f2fd;
+                }
+                .control-button.active i {
+                    color: #1a73e8;
+                }
+                .control-button i {
+                    font-size: 20px;
+                    color: #5f6368;
+                }
+            `;
+
+            // Toggle dropdown menu
+            menuButton.onclick = () => {
+                const isVisible = dropdownMenu.style.display === 'block';
+                dropdownMenu.style.display = isVisible ? 'none' : 'block';
+            };
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!container.contains(e.target)) {
+                    dropdownMenu.style.display = 'none';
+                }
+            });
+
+            return container;
+        };
+
+        controlContainer.addTo(map);
+    }
+
+    // Add helper functions for the controls
+    function setMapType(type) {
+        // Remove existing layers
+        map.eachLayer((layer) => {
+            if (layer instanceof L.TileLayer) {
+                map.removeLayer(layer);
+            }
+        });
+
+        // Add new layer based on type
+        switch (type) {
+            case 'streets':
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                break;
+            case 'satellite':
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: '© Esri'
+                }).addTo(map);
+                break;
+            case 'terrain':
+                L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenTopoMap contributors'
+                }).addTo(map);
+                break;
+        }
+
+        // Update active state of buttons
+        document.querySelectorAll('.map-type-controls .control-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[onclick="setMapType('${type}')"]`).classList.add('active');
+    }
+
+    function centerOnUserLocation() {
+        if (userMarker) {
+            map.setView(userMarker.getLatLng(), 15);
+        }
+    }
+
+    function toggleNavigationMode() {
+        const navButton = document.querySelector('[onclick="toggleNavigationMode()"]');
+        navButton.classList.toggle('active');
+        // Add your navigation mode logic here
+    }
+
+    function showDirectionsPanel(route) {
+        let panel = document.querySelector('.directions-panel');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.className = 'directions-panel';
+            document.body.appendChild(panel);
+        }
+
+        const steps = route.properties.segments[0].steps;
+        const distance = (route.properties.segments[0].distance / 1000).toFixed(1);
+        const duration = Math.round(route.properties.segments[0].duration / 60);
+
+        let html = `
+            <div style="padding: 16px; border-bottom: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 20px; font-weight: 500;">${duration} min</div>
+                        <div style="color: #666;">${distance} km</div>
+                    </div>
+                    <button onclick="startNavigation()" class="start-button">
+                        <i class="material-icons">navigation</i>
+                        Start
+                    </button>
+                </div>
+            </div>
+            <div style="overflow-y: auto; max-height: calc(70vh - 100px);">
+        `;
+
+        steps.forEach((step, index) => {
+            const instruction = step.instruction || step.maneuver?.instruction || 'Continue';
+            const distance = (step.distance / 1000).toFixed(1);
+            const maneuverType = step.maneuver?.type || 'continue';
+            
+            html += `
+                <div class="direction-step">
+                    <i class="material-icons">${getDirectionIcon(maneuverType)}</i>
+                    <div>
+                        <div>${instruction}</div>
+                        <div style="color: #666; font-size: 12px;">
+                            ${distance} km
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        panel.innerHTML = html;
+    }
+
+    function getDirectionIcon(maneuverType) {
+        const icons = {
+            'turn-left': 'turn_left',
+            'turn-right': 'turn_right',
+            'straight': 'straight',
+            'depart': 'departure_board',
+            'arrive': 'place',
+            'roundabout': 'roundabout_left',
+            'merge': 'merge',
+            'ramp': 'ramp_right',
+            'continue': 'arrow_forward',
+            'fork': 'fork_right',
+            'end-of-road': 'end_of_road',
+            'new-name': 'edit_road',
+            'notification': 'notifications',
+            'exit-roundabout': 'roundabout_right',
+            'exit-rotary': 'roundabout_right',
+            'uturn': 'u_turn_right',
+            'sharp-left': 'turn_sharp_left',
+            'sharp-right': 'turn_sharp_right',
+            'slight-left': 'turn_slight_left',
+            'slight-right': 'turn_slight_right',
+            'default': 'arrow_forward'
+        };
+        return icons[maneuverType] || icons.default;
+    }
+
+    // Function to fetch deals for a specific retailer
+    async function fetchDealsForRetailer(retailerName) {
+        try {
+            const response = await fetch(`http://localhost:5000/deals?retailer=${encodeURIComponent(retailerName)}`);
+            if (!response.ok) throw new Error('Failed to fetch deals');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching deals:', error);
+            return [];
+        }
+    }
+
+    function showAddDealForm() {
+      closeContributeMenu();
+      const menu = document.createElement('div');
+      menu.className = 'add-deal-menu';
+      menu.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 16px;
+        z-index: 1000;
+        width: 90%;
+        max-width: 400px;
+      `;
+
+      menu.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3>Add a New Deal</h3>
+          <button onclick="closeAddDealForm()" style="padding: 8px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div style="display: grid; gap: 12px;">
+          <input type="text" placeholder="Business Name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <input type="text" placeholder="Deal Title" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <textarea placeholder="Deal Description" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px; height: 80px;"></textarea>
+          <input type="text" placeholder="Discount (e.g., 50% off)" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <input type="date" placeholder="Expiry Date" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <button onclick="submitNewDeal()" style="padding: 12px; border: none; border-radius: 8px; background: #1a73e8; color: white; cursor: pointer;">
+            Submit Deal
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(menu);
+    }
+
+    function closeAddDealForm() {
+      const menu = document.querySelector('.add-deal-menu');
+      if (menu) {
+        document.body.removeChild(menu);
+      }
+    }
+
+    function showEditLocationForm() {
+      closeContributeMenu();
+      const menu = document.createElement('div');
+      menu.className = 'edit-location-menu';
+      menu.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 16px;
+        z-index: 1000;
+        width: 90%;
+        max-width: 400px;
+      `;
+
+      menu.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3>Edit Location Details</h3>
+          <button onclick="closeEditLocationForm()" style="padding: 8px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div style="display: grid; gap: 12px;">
+          <input type="text" placeholder="Business Name" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <input type="text" placeholder="Address" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <input type="text" placeholder="Phone Number" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <input type="text" placeholder="Opening Time" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <input type="text" placeholder="Closing Time" style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+          </div>
+          <button onclick="submitLocationEdit()" style="padding: 12px; border: none; border-radius: 8px; background: #1a73e8; color: white; cursor: pointer;">
+            Update Details
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(menu);
+    }
+
+    function closeEditLocationForm() {
+      const menu = document.querySelector('.edit-location-menu');
+      if (menu) {
+        document.body.removeChild(menu);
+      }
+    }
+
+    function submitNewDeal() {
+      alert('Deal submitted successfully!');
+      closeAddDealForm();
+    }
+
+    function submitLocationEdit() {
+      alert('Location details updated successfully!');
+      closeEditLocationForm();
+    }
+
+    // Add new function to handle multi-destination selection
+    function addToMultiDestination(place) {
+        const lat = parseFloat(place.lat);
+        const lon = parseFloat(place.lon);
+        const storeName = place.display_name.split(',')[0].trim();
+
+        // Add to destinations array
+        multiDestinations.push({
+            coordinates: [lat, lon],
+            name: storeName,
+            place: place
+        });
+
+        // Create marker for this destination
+        const marker = L.marker([lat, lon], {
+            icon: L.divIcon({
+                className: 'destination-marker',
+                html: `<div class="destination-number">${multiDestinations.length}</div>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            })
+        }).addTo(map);
+        multiDestinationMarkers.push(marker);
+
+        // Update the multi-destination UI
+        updateMultiDestinationUI();
+
+        // If we have at least 2 destinations, show the route
+        if (multiDestinations.length >= 2) {
+            calculateMultiDestinationRoute();
+        }
+    }
+
+    // Add new function to update multi-destination UI
+    function updateMultiDestinationUI() {
+        let container = document.querySelector('.multi-destination-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'multi-destination-container';
+            document.body.appendChild(container);
+        }
+
+        container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Multi-Destination Route</h3>
+                <button onclick="closeMultiDestination()" style="padding: 8px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <div class="destination-list">
+                ${multiDestinations.map((dest, index) => `
+                    <div class="destination-item">
+                        <div class="destination-number">${index + 1}</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500;">${dest.name}</div>
+                            <div style="color: #5f6368; font-size: 12px;">${dest.place.display_name}</div>
+                        </div>
+                        <div class="destination-actions">
+                            <button onclick="removeDestination(${index})" style="padding: 4px; border: none; background: none; cursor: pointer;">
+                                <i class="material-icons" style="color: #d32f2f;">delete</i>
+                            </button>
+                            <button onclick="reorderDestination(${index}, 'up')" ${index === 0 ? 'disabled' : ''} style="padding: 4px; border: none; background: none; cursor: pointer;">
+                                <i class="material-icons" style="color: #5f6368;">arrow_upward</i>
+                            </button>
+                            <button onclick="reorderDestination(${index}, 'down')" ${index === multiDestinations.length - 1 ? 'disabled' : ''} style="padding: 4px; border: none; background: none; cursor: pointer;">
+                                <i class="material-icons" style="color: #5f6368;">arrow_downward</i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="multi-destination-controls">
+                <button onclick="startMultiDestinationNavigation()" style="padding: 8px 16px; border: none; border-radius: 8px; background: #1a73e8; color: white; cursor: pointer;">
+                    Start Navigation
+                </button>
+                <button onclick="clearMultiDestinations()" style="padding: 8px 16px; border: none; border-radius: 8px; background: #f1f3f4; cursor: pointer;">
+                    Clear All
+                </button>
+            </div>
+        `;
+    }
+
+    // Add new function to calculate route between multiple destinations
+    async function calculateMultiDestinationRoute() {
+        // Clear existing route lines
+        multiRouteLines.forEach(line => map.removeLayer(line));
+        multiRouteLines = [];
+
+        // Get selected travel mode
+        const selectedMode = document.querySelector('.mode-button.active')?.dataset?.mode || 'driving';
+        const profile = selectedMode === 'walking' ? 'foot-walking' : 
+                      selectedMode === 'bicycling' ? 'cycling-regular' : 
+                      'driving-car';
+
+        // Calculate route between each pair of destinations
+        for (let i = 0; i < multiDestinations.length - 1; i++) {
+            const start = multiDestinations[i].coordinates;
+            const end = multiDestinations[i + 1].coordinates;
+
+            try {
+                const apiKey = '5b3ce3597851110001cf624875873fb6067949a9b27e61d567aaee17';
+                const url = `https://api.openrouteservice.org/v2/directions/${profile}`;
+                
+                const response = await fetch(`${url}?api_key=${apiKey}&start=${start[1]},${start[0]}&end=${end[1]},${end[0]}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8'
+                    }
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                if (data.features && data.features.length > 0) {
+                    const route = data.features[0];
+                    const coordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                    
+                    const routeLine = L.polyline(coordinates, {
+                        color: '#1a73e8',
+                        weight: 5,
+                        opacity: 0.7
+                    }).addTo(map);
+                    
+                    multiRouteLines.push(routeLine);
+                }
+            } catch (error) {
+                console.error('Error calculating route segment:', error);
+            }
+        }
+
+        // Fit map to show all routes
+        if (multiRouteLines.length > 0) {
+            const bounds = L.latLngBounds(multiRouteLines.flatMap(line => line.getLatLngs()));
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+    }
+
+    // Add new function to remove a destination
+    function removeDestination(index) {
+        // Remove marker
+        map.removeLayer(multiDestinationMarkers[index]);
+        multiDestinationMarkers.splice(index, 1);
+        
+        // Remove destination
+        multiDestinations.splice(index, 1);
+        
+        // Update markers' numbers
+        multiDestinationMarkers.forEach((marker, i) => {
+            marker.setIcon(L.divIcon({
+                className: 'destination-marker',
+                html: `<div class="destination-number">${i + 1}</div>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            }));
+        });
+        
+        // Update UI and recalculate route
+        updateMultiDestinationUI();
+        if (multiDestinations.length >= 2) {
+            calculateMultiDestinationRoute();
+        }
+    }
+
+    // Add new function to reorder destinations
+    function reorderDestination(index, direction) {
+        if (direction === 'up' && index > 0) {
+            [multiDestinations[index], multiDestinations[index - 1]] = [multiDestinations[index - 1], multiDestinations[index]];
+            [multiDestinationMarkers[index], multiDestinationMarkers[index - 1]] = [multiDestinationMarkers[index - 1], multiDestinationMarkers[index]];
+        } else if (direction === 'down' && index < multiDestinations.length - 1) {
+            [multiDestinations[index], multiDestinations[index + 1]] = [multiDestinations[index + 1], multiDestinations[index]];
+            [multiDestinationMarkers[index], multiDestinationMarkers[index + 1]] = [multiDestinationMarkers[index + 1], multiDestinationMarkers[index]];
+        }
+        
+        // Update markers' numbers
+        multiDestinationMarkers.forEach((marker, i) => {
+            marker.setIcon(L.divIcon({
+                className: 'destination-marker',
+                html: `<div class="destination-number">${i + 1}</div>`,
+                iconSize: [32, 32],
+                iconAnchor: [16, 32]
+            }));
+        });
+        
+        // Update UI and recalculate route
+        updateMultiDestinationUI();
+        if (multiDestinations.length >= 2) {
+            calculateMultiDestinationRoute();
+        }
+    }
+
+    // Add new function to clear all destinations
+    function clearMultiDestinations() {
+        multiRouteLines.forEach(line => map.removeLayer(line));
+        multiRouteLines = [];
+        
+        multiDestinationMarkers.forEach(marker => map.removeLayer(marker));
+        multiDestinationMarkers = [];
+        
+        multiDestinations = [];
+        
+        const container = document.querySelector('.multi-destination-container');
+        if (container) {
+            container.remove();
+        }
+    }
+
+    // Add new function to start multi-destination navigation
+    function startMultiDestinationNavigation() {
+        if (multiDestinations.length < 2) {
+            alert('Please add at least 2 destinations to start navigation');
+            return;
+        }
+
+        // Close multi-destination container
+        const container = document.querySelector('.multi-destination-container');
+        if (container) {
+            container.remove();
+        }
+
+        // Start navigation with first destination
+        getDirections(multiDestinations[0].coordinates);
+    }
+
+    // Add new function to close multi-destination UI
+    function closeMultiDestination() {
+        const container = document.querySelector('.multi-destination-container');
+        if (container) {
+            container.remove();
+        }
+    }
+  </script>
+</body>
+</html>
