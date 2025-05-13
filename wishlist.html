@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <title>Wishlist & Collections</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: white;
+            max-width: 480px;
+            margin: auto;
+            padding-bottom: 70px; /* Add padding to the bottom to avoid overlap */
+        }
+
+        /* Header */
+        .header {
+            background-color: #ff6347;
+            color: white;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center the header text */
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            background: white;
+            padding: 8px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .tab.active {
+            border-bottom: 3px solid #ff6347;
+            color: #ff6347;
+        }
+
+        /* Wishlist Section */
+        .wishlist-section {
+            padding: 12px;
+        }
+
+        .wishlist-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .wishlist-item img {
+            width: 60px;
+            height: 60px;
+            border-radius: 5px;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+
+        .wishlist-info {
+            flex-grow: 1;
+        }
+
+        .wishlist-title {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .wishlist-price {
+            font-size: 12px;
+            color: gray;
+            font-weight: bold;
+        }
+
+        .wishlist-discount {
+            font-size: 12px;
+            color: blue;
+        }
+
+        .wishlist-actions button {
+            background: lightcoral;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* Create Collection Button */
+        .create-btn {
+            position: fixed;
+            bottom: 70px; /* Adjusted to be above the bottom navigation */
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 30px);
+            max-width: 480px;
+            background: white;
+            color: #ff6347;
+            border: 2px solid #ff6347;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .create-btn:hover {
+            background: #ff6347;
+            color: white;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .bottom-nav a {
+            text-decoration: none;
+            font-size: 20px;
+            color: gray;
+            padding: 5px;
+            transition: color 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bottom-nav a.active, .bottom-nav a:hover {
+            color: #ff6347;
+        }
+
+        .bottom-nav a[aria-label="Home"]::after {
+            content: "Home";
+            display: block;
+            font-size: 12px;
+            color: gray;
+            text-align: center;
+        }
+
+        .bottom-nav a[aria-label="Map"]::after {
+            content: "Map";
+            display: block;
+            font-size: 12px;
+            color: gray;
+            text-align: center;
+        }
+
+        .bottom-nav a[aria-label="Trending"]::after {
+            content: "Trending";
+            display: block;
+            font-size: 12px;
+            color: gray;
+            text-align: center;
+        }
+
+        .bottom-nav a[aria-label="Favorites"]::after {
+            content: "Favorites";
+            display: block;
+            font-size: 12px;
+            color: gray;
+            text-align: center;
+        }
+
+        .bottom-nav a[aria-label="Notifications"]::after {
+            content: "Notifications";
+            display: block;
+            font-size: 12px;
+            color: gray;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        Wishlist & Collections
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <div class="tab" onclick="switchTab(0)">My Collections</div>
+        <div class="tab active" onclick="switchTab(1)">My Wishlist</div>
+    </div>
+
+    <!-- Wishlist Section -->
+    <div class="wishlist-section" id="wishlist-section">
+        <!-- Items will be dynamically added here -->
+    </div>
+
+    <!-- Collections Section -->
+    <div class="wishlist-section" id="collections-section" style="display: none;">
+        <!-- Collections will be loaded here -->
+    </div>
+
+    <!-- Create Collection Button -->
+    <div class="create-btn" onclick="window.location.href='newcoll.html'">+ Create a new collection</div>
+
+    <!-- 🔹 Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="../../home.html" aria-label="Home"><i class="fas fa-home"></i></a>
+        <a href="map.html" aria-label="Map"><i class="fas fa-map-marker-alt"></i></a>
+        <a href="hotdeal.html" aria-label="Trending"><i class="fa-solid fa-fire"></i></a>
+        <a href="wishlist.html" class="active" aria-label="Favorites"><i class="fas fa-heart"></i></a>
+        <a href="notify.html" id="notification-btn" aria-label="Notifications"><i class="fas fa-bell"></i></a>
+    </nav>
+
+    <!-- Firebase Setup Script -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, deleteDoc, doc, addDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+
+        // Wishlist Database Config
+        const wishlistConfig = {
+            apiKey: "AIzaSyBhgQ-3m6DcXGZlDg6kq2Jx7Ei4ORHVJPE",
+            authDomain: "login-form-f98c7.firebaseapp.com",
+            projectId: "login-form-f98c7",
+            storageBucket: "login-form-f98c7.firebasestorage.app",
+            messagingSenderId: "174637943387",
+            appId: "1:174637943387:web:45fe45fe97f2699ee04d7e",
+            measurementId: "G-QX0XXWB1Q6"
+        };
+
+        // Initialize Firebase for wishlist
+        const wishlistApp = initializeApp(wishlistConfig, "wishlist");
+        const wishlistDb = getFirestore(wishlistApp);
+        
+        // Make Firebase resources available globally
+        window.wishlistDb = wishlistDb;
+        window.firestoreCollection = collection;
+        window.firestoreQuery = query;
+        window.firestoreWhere = where;
+        window.firestoreGetDocs = getDocs;
+        window.firestoreDeleteDoc = deleteDoc;
+        window.firestoreDoc = doc;
+        window.firestoreAddDoc = addDoc;
+        window.firestoreGetDoc = getDoc;
+        window.firestoreUpdateDoc = updateDoc;
+        
+        // Signal that Firebase is ready
+        window.firebaseReady = true;
+        console.log("Firebase initialized and ready");
+        
+        // Dispatch a custom event that our app can listen for
+        window.dispatchEvent(new CustomEvent('firebaseReady'));
+    </script>
+
+    <script>
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab');
+            const wishlistSection = document.getElementById('wishlist-section');
+            const collectionsSection = document.getElementById('collections-section');
+
+            tabs.forEach((tab, i) => {
+                if (i === index) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+
+            if (index === 0) {
+                wishlistSection.style.display = 'none';
+                collectionsSection.style.display = 'block';
+            } else {
+                wishlistSection.style.display = 'block';
+                collectionsSection.style.display = 'none';
+            }
+        }
+
+        async function loadWishlist() {
+            try {
+                // Get current user from localStorage
+                const currentUserId = localStorage.getItem('loggedInUserId');
+                if (!currentUserId) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                console.log('Loading wishlist for user:', currentUserId);
+
+                // Get user document from wishlist database
+                const userRef = window.firestoreDoc(window.wishlistDb, "users", currentUserId);
+                const userDoc = await window.firestoreGetDoc(userRef);
+                
+                console.log('User document exists:', userDoc.exists());
+                
+                const wishlistSection = document.getElementById('wishlist-section');
+                wishlistSection.innerHTML = ''; // Clear existing items
+                
+                let userData = {
+                    uid: currentUserId,
+                    createdAt: new Date(),
+                    status: "active",
+                    wishlist: []
+                };
+
+                if (userDoc.exists()) {
+                    const existingData = userDoc.data();
+                    console.log('Existing user data:', existingData);
+                    userData = {
+                        ...userData,
+                        ...existingData,
+                        wishlist: existingData.wishlist || []
+                    };
+                } else {
+                    console.log('Creating new user document');
+                    // Create new user document if it doesn't exist
+                    await window.firestoreSetDoc(userRef, userData);
+                }
+                
+                const wishlist = userData.wishlist;
+                console.log('Wishlist items:', wishlist);
+                
+                if (wishlist.length === 0) {
+                    wishlistSection.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Your wishlist is empty</div>';
+                    return;
+                }
+                
+                wishlist.forEach((item, index) => {
+                    console.log('Rendering wishlist item:', item);
+                    const wishlistItem = document.createElement('div');
+                    wishlistItem.className = 'wishlist-item';
+                    wishlistItem.innerHTML = `
+                        <img src="${item.imageUrl || 'placeholder.jpg'}" alt="${item.title}" onerror="this.src='placeholder.jpg'">
+                        <div class="wishlist-info">
+                            <div class="wishlist-title">${item.title || 'Untitled Item'}</div>
+                            ${item.discountedPrice ? `
+                                <div class="wishlist-price">₹${item.discountedPrice}</div>
+                                ${item.originalPrice ? `<div style="text-decoration: line-through; color: #666; font-size: 12px;">₹${item.originalPrice}</div>` : ''}
+                            ` : ''}
+                            ${item.discountType ? `<div class="wishlist-discount">${item.discountType}</div>` : ''}
+                            <div class="shop-info" style="font-size: 12px; color: #666; margin-top: 4px;">
+                                ${item.retailerName || 'Unknown Shop'}
+                            </div>
+                            ${item.category ? `<div class="category-info" style="font-size: 12px; color: #666; margin-top: 2px;">${item.category}</div>` : ''}
+                            ${item.brand ? `<div class="brand-info" style="font-size: 12px; color: #666; margin-top: 2px;">${item.brand}</div>` : ''}
+                        </div>
+                        <div class="wishlist-actions">
+                            <button onclick="removeFromWishlist(${index}, '${currentUserId}')">Remove</button>
+                        </div>
+                    `;
+                    wishlistSection.appendChild(wishlistItem);
+                });
+            } catch (error) {
+                console.error('Error loading wishlist:', error);
+                document.getElementById('wishlist-section').innerHTML = 
+                    '<div style="text-align: center; padding: 20px; color: #f44336;">Error loading wishlist. Please try again.</div>';
+            }
+        }
+
+        async function removeFromWishlist(itemIndex, userId) {
+            try {
+                console.log('Removing item at index:', itemIndex, 'for user:', userId);
+                const userRef = window.firestoreDoc(window.wishlistDb, "users", userId);
+                const userDoc = await window.firestoreGetDoc(userRef);
+                
+                let userData = {
+                    uid: userId,
+                    createdAt: new Date(),
+                    status: "active",
+                    wishlist: []
+                };
+
+                if (userDoc.exists()) {
+                    const existingData = userDoc.data();
+                    console.log('Existing user data before removal:', existingData);
+                    userData = {
+                        ...userData,
+                        ...existingData,
+                        wishlist: existingData.wishlist || []
+                    };
+                }
+                
+                // Remove the item at the specified index
+                userData.wishlist.splice(itemIndex, 1);
+                console.log('Updated wishlist after removal:', userData.wishlist);
+                
+                // Update the user document with the modified wishlist
+                await window.firestoreUpdateDoc(userRef, {
+                    wishlist: userData.wishlist
+                });
+                
+                // Reload the wishlist
+                loadWishlist();
+            } catch (error) {
+                console.error('Error removing item from wishlist:', error);
+                alert('Failed to remove item. Please try again.');
+            }
+        }
+
+        // Load wishlist when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.firebaseReady) {
+                loadWishlist();
+            } else {
+                window.addEventListener('firebaseReady', loadWishlist);
+            }
+        });
+    </script>
+</body>
+</html>

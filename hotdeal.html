@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ff0000">
+<title>Hot Deals</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<!-- Firebase Scripts -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+    import { getFirestore, collection, doc, getDocs, query, where, orderBy, limit as firestoreLimit, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
+
+    // Make Firebase services available globally
+    window.initializeApp = initializeApp;
+    window.getFirestore = getFirestore;
+    window.getAuth = getAuth;
+    window.collection = collection;
+    window.doc = doc;
+    window.getDocs = getDocs;
+    window.query = query;
+    window.where = where;
+    window.orderBy = orderBy;
+    window.limit = firestoreLimit;
+    window.getDoc = getDoc;
+    window.setDoc = setDoc;
+    window.updateDoc = updateDoc;
+</script>
+<style>
+*{
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body
+{
+  font-family: -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  background-color: #f1f1f1;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
+}
+.icon {
+  font-size: 2em;
+  margin-right: 10px;
+}
+
+
+.menu-bar {
+  background-color: red;
+  width: 100%;
+  max-width: 480px;
+  padding: 10px 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  -webkit-overflow-scrolling: touch;
+}
+
+.menu-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.menu-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: 14px;
+  margin-right: 8px;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50px;
+  height: 36px;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.menu-item:last-child {
+  margin-right: 0;
+}
+
+.menu-item.active {
+  background-color: rgba(255,255,255,0.2);
+  font-weight: 500;
+}
+
+.content-area {
+  padding: 16px 12px;
+  margin-top: 56px;
+  width: 100%;
+  padding-bottom: 70px;
+}
+
+.content-section {
+  display: none;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.content-section.active {
+  display: block;
+}
+
+.content-section h2 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: #212121;
+  padding: 0 4px;
+  font-weight: 500;
+}
+
+.product-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.product-item {
+  display: flex;
+  margin-bottom: 12px;
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.product-item:active {
+  transform: scale(0.98);
+}
+
+.product-item img {
+  width: 76px;
+  height: 76px;
+  object-fit: cover;
+  margin-right: 12px;
+  border-radius: 8px;
+  background-color: #f8f8f8;
+}
+
+.product-details {
+  flex: 1;
+  min-width: 0;
+  padding-right: 4px;
+}
+
+.product-name {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: #212121;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-description {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #666;
+  line-height: 1.3;
+}
+
+.product-details p:last-child {
+  font-size: 14px;
+  color: #e41e31;
+  font-weight: 500;
+}
+
+/* Small Android phones */
+@media screen and (max-width: 360px) {
+  body {
+    font-size: 14px;
+  }
+
+  .menu-bar {
+    height: 52px;
+    padding: 8px 6px;
+  }
+
+  .menu-item {
+    padding: 6px 12px;
+    font-size: 13px;
+    height: 32px;
+  }
+  
+  .content-area {
+    padding: 12px 8px;
+    margin-top: 52px;
+  }
+
+  .product-item {
+    padding: 10px;
+  }
+  
+  .product-item img {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .content-section h2 {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+  
+  .product-name {
+    font-size: 14px;
+  }
+  
+  .product-description {
+    font-size: 13px;
+  }
+}
+
+/* Extra small Android phones */
+@media screen and (max-width: 320px) {
+  .menu-item {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .product-item img {
+    width: 64px;
+    height: 64px;
+  }
+  
+  .content-area {
+    padding: 10px 6px;
+  }
+  
+  .product-item {
+    padding: 8px;
+  }
+}
+
+#hot.content-section {
+  background: white;
+  min-height: calc(100vh - 56px);
+  margin: -16px -12px;
+  padding: 16px 12px;
+}
+
+.product-detail-view {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px; /* Match the max width of the hot deals page */
+  height: 100%;
+  background: #f8f8f8;
+  z-index: 2000;
+  overflow-y: auto;
+  display: none;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.product-detail-view.active {
+  display: block;
+}
+
+.detail-header {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px; /* Match the max width of the hot deals page */
+  height: 56px;
+  background: red;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  z-index: 2001;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.modal-back-btn {
+  text-decoration: none;
+  color: white;
+  font-size: 24px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.modal-back-btn:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.modal-title {
+  font-size: 16px;
+  color: white;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.deal-modal-image {
+  width: 100%;
+  height: 300px;
+  object-fit: contain;
+  background: #f8f8f8;
+  padding: 20px;
+  cursor: pointer;
+  transition: opacity 0.3s;
+}
+
+.deal-modal-image:hover {
+  opacity: 0.9;
+}
+
+.deal-modal-title {
+  font-size: 20px;
+  color: #333;
+  margin: 15px;
+  line-height: 1.4;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.wishlist-icon {
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 5px;
+  transition: all 0.3s ease;
+}
+
+.wishlist-icon:hover {
+  color: #ff6547;
+  transform: scale(1.1);
+}
+
+.wishlist-icon.active {
+  color: #ff6547;
+}
+
+.deal-modal-price {
+  font-size: 18px;
+  color: #ff6547;
+  font-weight: bold;
+  margin: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  background: #fff5f3;
+  border-radius: 8px;
+}
+
+.deal-modal-badge {
+  display: inline-block;
+  background: #ff6547;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  margin: 15px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(255, 101, 71, 0.2);
+}
+
+.deal-modal-description {
+  color: #444;
+  margin: 0 15px 15px;
+  line-height: 1.6;
+  font-size: 15px;
+  padding: 15px;
+  background: #f8f8f8;
+  border-radius: 8px;
+}
+
+.deal-modal-info {
+  background-color: white;
+  padding: 15px;
+  margin-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.deal-modal-info-section {
+  margin-bottom: 20px;
+}
+
+.deal-modal-info-section h3 {
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.shop-name-section {
+  background: #fff5f3;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border-left: 4px solid #ff6547;
+  box-shadow: 0 2px 4px rgba(255, 101, 71, 0.1);
+  }
+
+.shop-name-section h3 {
+  color: #ff6547;
+    font-size: 18px;
+  margin-bottom: 10px;
+  font-weight: 600;
+  }
+
+.shop-name-section p {
+  color: #333;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 15px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid rgba(255, 101, 71, 0.2);
+  }
+
+.shop-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  }
+
+.shop-detail-item {
+  background: #f8f8f8;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #666;
+  }
+
+.shop-detail-item strong {
+  color: #333;
+  font-weight: 500;
+  }
+
+.deal-modal-info-section p {
+  margin: 8px 0;
+  color: #666;
+  font-size: 14px;
+    line-height: 1.5;
+  }
+
+.deal-modal-info-section p strong {
+  color: #333;
+  font-weight: 500;
+  }
+
+.deal-modal-divider {
+  height: 1px;
+  background: #eee;
+  margin: 15px 0;
+}
+
+.deal-modal-terms {
+  background: #fff5f3;
+  padding: 15px;
+  margin: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #ff6547;
+}
+
+.deal-modal-terms h3 {
+  color: #ff6547;
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.deal-modal-terms p {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.deal-modal-dates {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  background: #f8f8f8;
+  margin: 15px;
+  border-radius: 8px;
+}
+
+.deal-modal-date-item {
+  text-align: center;
+}
+
+.deal-modal-date-item span {
+  display: block;
+  color: #666;
+  font-size: 12px;
+  margin-bottom: 5px;
+  }
+
+.deal-modal-date-item strong {
+  color: #333;
+    font-size: 14px;
+}
+
+.image-viewer-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.95);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-viewer-modal.show {
+  display: flex;
+}
+
+.image-viewer-content {
+  max-width: 100%;
+  max-height: 100%;
+  position: relative;
+  padding: 20px;
+}
+
+.image-viewer-content img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-viewer-close {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  color: #333;
+  font-size: 30px;
+  cursor: pointer;
+  z-index: 2001;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.image-viewer-close:hover {
+  background: #ff6547;
+  color: white;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  max-width: 480px;
+  background: white;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.bottom-nav a {
+  text-decoration: none;
+  font-size: 20px;
+  color: gray;
+  padding: 5px;
+  transition: color 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bottom-nav a.active, .bottom-nav a:hover {
+  color: #ff6347;
+}
+
+.bottom-nav a[aria-label="Home"]::after {
+  content: "Home";
+  display: block;
+  font-size: 12px;
+  color: gray;
+  text-align: center;
+}
+
+.bottom-nav a[aria-label="Map"]::after {
+  content: "Map";
+  display: block;
+  font-size: 12px;
+  color: gray;
+  text-align: center;
+}
+
+.bottom-nav a[aria-label="Trending"]::after {
+  content: "Trending";
+  display: block;
+  font-size: 12px;
+  color: gray;
+  text-align: center;
+}
+
+.bottom-nav a[aria-label="Favorites"]::after {
+  content: "Favorites";
+  display: block;
+  font-size: 12px;
+  color: gray;
+  text-align: center;
+}
+
+.bottom-nav a[aria-label="Notifications"]::after {
+  content: "Notifications";
+  display: block;
+  font-size: 12px;
+  color: gray;
+  text-align: center;
+}
+
+.page-container {
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+</style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="menu-bar">
+      <button class="menu-item active" data-tab="hot">Hot Deals🔥</button>
+      <button class="menu-item" data-tab="new">New</button>
+      <button class="menu-item" data-tab="popular">Popular</button>
+      <button class="menu-item" data-tab="trending">Trending</button>
+      <button class="menu-item" data-tab="festival">Festival Offers</button>
+      <button class="menu-item" data-tab="weekend">Weekend Special</button>
+    </div>
+
+    <div class="content-area">
+      <div id="hot" class="content-section active">
+        <h2>Hot Deals – Limited-time, high-discount deals.</h2>
+        <ul class="product-list">
+          <!-- Products will be dynamically loaded here -->
+        </ul>
+      </div>
+      <div id="new" class="content-section">
+        <h2>New – Latest products with introductory offers.</h2>
+        <ul class="product-list">
+          <!-- Products will be dynamically loaded here -->
+        </ul>
+      </div>
+      <div id="popular" class="content-section">
+        <h2>Popular – Most viewed or purchased deals.</h2>
+        <ul class="product-list">
+          <!-- Products will be dynamically loaded here -->
+        </ul>
+      </div>
+      <div id="trending" class="content-section">
+        <h2>Trending – Deals currently gaining traction.</h2>
+        <ul class="product-list">
+          <!-- Products will be dynamically loaded here -->
+        </ul>
+      </div>
+      <div id="festival" class="content-section">
+        <h2>Festival Offers – Diwali, Christmas, Black Friday deals.</h2>
+        <ul class="product-list">
+          <!-- Products will be dynamically loaded here -->
+        </ul>
+      </div>
+      <div id="weekend" class="content-section">
+        <h2>Weekend Special – Limited-time weekend discounts.</h2>
+        <ul class="product-list">
+          <!-- Products will be dynamically loaded here -->
+        </ul>
+      </div>
+    </div>
+
+    <!-- Product Detail View Template -->
+    <div class="product-detail-view">
+      <div class="detail-header">
+        <a href="#" class="modal-back-btn">
+          <i class="fas fa-arrow-left"></i>
+        </a>
+        <span class="modal-title">Deal Details</span>
+      </div>
+      <div class="detail-content">
+        <img class="deal-modal-image" src="" alt="">
+        <div class="deal-modal-badge"></div>
+        <div class="deal-modal-title">
+          <span></span>
+          <i class="fas fa-heart wishlist-icon"></i>
+        </div>
+        <div class="deal-modal-price"></div>
+        <div class="deal-modal-description"></div>
+        <div class="deal-modal-dates">
+          <div class="deal-modal-date-item">
+            <span>Start Date</span>
+            <strong></strong>
+          </div>
+          <div class="deal-modal-date-item">
+            <span>Expiry Date</span>
+            <strong></strong>
+          </div>
+        </div>
+        <div class="deal-modal-info">
+          <div class="deal-modal-info-section">
+            <div class="shop-name-section">
+              <h3>Shop Information</h3>
+              <p></p>
+              <div class="shop-details"></div>
+            </div>
+          </div>
+          <div class="deal-modal-info-section features-section"></div>
+          <div class="deal-modal-info-section specifications-section"></div>
+        </div>
+        <div class="deal-modal-terms"></div>
+      </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div id="imageViewerModal" class="image-viewer-modal">
+      <span class="image-viewer-close">&times;</span>
+      <div class="image-viewer-content">
+        <img id="viewerImage" src="" alt="Full size image">
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <a href="../../home.html" aria-label="Home"><i class="fas fa-home"></i></a>
+      <a href="#" aria-label="Map"><i class="fas fa-map-marker-alt"></i></a>
+      <a href="hotdeal.html" class="active" aria-label="Trending"><i class="fa-solid fa-fire"></i></a>
+      <a href="wishlist.html" aria-label="Favorites"><i class="fas fa-heart"></i></a>
+      <a href="notify.html" id="notification-btn" aria-label="Notifications"><i class="fas fa-bell"></i></a>
+    </nav>
+  </div>
+</body>
+<script type="module">
+// Initialize Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyBQ3UhKKRW19wD2oyjV-QbXp61FguwqSak",
+    authDomain: "seller-6975f.firebaseapp.com",
+    projectId: "seller-6975f",
+    storageBucket: "seller-6975f.firebasestorage.app",
+    messagingSenderId: "123675528821",
+    appId: "1:123675528821:web:bd9aac9a48bbad3a09723c",
+    measurementId: "G-5E37M5R2RM"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Initialize wishlist database
+const wishlistConfig = {
+    apiKey: "AIzaSyBhgQ-3m6DcXGZlDg6kq2Jx7Ei4ORHVJPE",
+    authDomain: "login-form-f98c7.firebaseapp.com",
+    projectId: "login-form-f98c7",
+    storageBucket: "login-form-f98c7.firebasestorage.app",
+    messagingSenderId: "174637943387",
+    appId: "1:174637943387:web:45fe45fe97f2699ee04d7e",
+    measurementId: "G-QX0XXWB1Q6"
+};
+
+const wishlistApp = initializeApp(wishlistConfig, "wishlist");
+const wishlistDb = getFirestore(wishlistApp);
+
+document.addEventListener('DOMContentLoaded', function() {
+const menuItems = document.querySelectorAll('.menu-item');
+const contentSections = document.querySelectorAll('.content-section');
+const productDetailView = document.querySelector('.product-detail-view');
+const backButton = document.querySelector('.modal-back-btn');
+    let currentUser = null;
+
+    // Check authentication state
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            currentUser = user;
+            localStorage.setItem('loggedInUserId', user.uid);
+            loadDeals();
+        } else {
+            const storedUserId = localStorage.getItem('loggedInUserId');
+            if (!storedUserId) {
+                window.location.href = 'login.html';
+            } else {
+                currentUser = { uid: storedUserId };
+                loadDeals();
+            }
+        }
+    });
+
+    // Load deals from Firebase
+    async function loadDeals() {
+        try {
+            const dealsDb = collection(db, 'deals');
+            const dealsQuery = query(dealsDb, orderBy('createdAt', 'desc'));
+            const snapshot = await getDocs(dealsQuery);
+            const allDeals = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            // Filter festival deals
+            const festivalKeywords = ['diwali', 'tamil new year', 'ramadan', 'good friday', 'aadi'];
+            const festivalDeals = allDeals.filter(deal => {
+                const searchText = (deal.title + ' ' + deal.description).toLowerCase();
+                return festivalKeywords.some(keyword => searchText.includes(keyword));
+            });
+            
+            // Filter weekend deals
+            const weekendDeals = allDeals.filter(deal => {
+                const searchText = (deal.title + ' ' + deal.description).toLowerCase();
+                return searchText.includes('weekend');
+            });
+            
+            // Get remaining deals (excluding festival and weekend deals)
+            const remainingDeals = allDeals.filter(deal => 
+                !festivalDeals.includes(deal) && !weekendDeals.includes(deal)
+            );
+            
+            // Shuffle remaining deals
+            const shuffledDeals = shuffleArray(remainingDeals);
+            
+            // Define categories and their deals
+            const categories = [
+                { id: 'hot', name: 'Hot Deals', deals: shuffledDeals.slice(0, 10) },
+                { id: 'new', name: 'New', deals: shuffledDeals.slice(10, 20) },
+                { id: 'popular', name: 'Popular', deals: shuffledDeals.slice(20, 30) },
+                { id: 'trending', name: 'Trending', deals: shuffledDeals.slice(30, 40) },
+                { id: 'festival', name: 'Festival Offers', deals: festivalDeals.slice(0, 10) },
+                { id: 'weekend', name: 'Weekend Special', deals: weekendDeals.slice(0, 10) }
+            ];
+            
+            // Display deals for each category
+            categories.forEach(category => {
+                displayCategoryDeals(category.id, category.deals);
+            });
+        } catch (error) {
+            console.error('Error loading deals:', error);
+        }
+    }
+
+    // Fisher-Yates shuffle algorithm
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // Display deals for a specific category
+    function displayCategoryDeals(categoryId, deals) {
+        const productList = document.querySelector(`#${categoryId} .product-list`);
+        productList.innerHTML = '';
+
+        if (deals.length === 0) {
+            productList.innerHTML = `
+                <li class="product-item" style="text-align: center; padding: 20px;">
+                    <p style="color: #666;">No deals available at the moment.</p>
+                </li>`;
+            return;
+        }
+
+        deals.forEach(deal => {
+            const productItem = createProductItem(deal);
+            productList.appendChild(productItem);
+        });
+    }
+
+    // Create product item element
+    function createProductItem(deal) {
+        const li = document.createElement('li');
+        li.className = 'product-item';
+        li.dataset.productId = deal.id;
+
+        const imageUrl = deal.imageUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23cccccc'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='Arial, sans-serif' fill='%23666666'%3ENo Image%3C/text%3E%3C/svg%3E";
+        
+        const expiryDate = deal.expiryDate ? new Date(deal.expiryDate).toLocaleDateString() : 'No expiry';
+        const originalPrice = deal.originalPrice ? `₹${deal.originalPrice}` : '';
+        const discountedPrice = deal.discountedPrice ? `₹${deal.discountedPrice}` : '';
+        const discount = deal.discountType || '';
+
+        li.innerHTML = `
+            <img src="${imageUrl}" alt="${deal.title || 'Deal'}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'300\\' height=\\'200\\' viewBox=\\'0 0 300 200\\'%3E%3Crect width=\\'300\\' height=\\'200\\' fill=\\'%23cccccc\\'/%3E%3Ctext x=\\'50%25\\' y=\\'50%25' font-size=\\'18\\' text-anchor=\\'middle\\' alignment-baseline=\\'middle\\' font-family=\\'Arial, sans-serif\\' fill=\\'%23666666\\'%3ENo Image%3C/text%3E%3C/svg%3E'">
+            <div class="product-details">
+                <h3 class="product-name">${deal.title || 'Untitled Deal'}</h3>
+                <p class="product-description">${deal.description ? (deal.description.substring(0, 50) + (deal.description.length > 50 ? '...' : '')) : 'No description available'}</p>
+                <p>${discountedPrice} ${originalPrice ? `<span style="text-decoration: line-through; color: #666;">${originalPrice}</span>` : ''} ${discount ? `<span style="color: #e41e31;">${discount}</span>` : ''}</p>
+            </div>
+        `;
+
+        li.addEventListener('click', () => showDealDetails(deal));
+        return li;
+    }
+
+// Add toggleWishlist function
+async function toggleWishlist(icon, dealData) {
+    try {
+        if (!currentUser) {
+            alert('Please login to add items to wishlist');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Get user document reference from wishlist database
+        const userRef = doc(wishlistDb, "users", currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        
+        let userData = {
+            uid: currentUser.uid,
+            email: currentUser.email || '',
+            createdAt: new Date(),
+            status: "active",
+            wishlist: []
+        };
+
+        if (userDoc.exists()) {
+            const existingData = userDoc.data();
+            userData = {
+                ...userData,
+                ...existingData,
+                wishlist: existingData.wishlist || []
+            };
+        }
+
+        // Check if item is already in wishlist
+        const itemIndex = userData.wishlist.findIndex(item => item.dealId === dealData.id);
+
+        if (itemIndex === -1) {
+            // Create wishlist item with only defined fields
+            const wishlistItem = {
+                dealId: dealData.id,
+                createdAt: new Date()
+            };
+
+            // Add fields only if they are defined
+            if (dealData.title) wishlistItem.title = dealData.title;
+            if (dealData.description) wishlistItem.description = dealData.description;
+            if (dealData.imageUrl) wishlistItem.imageUrl = dealData.imageUrl;
+            if (dealData.originalPrice) wishlistItem.originalPrice = dealData.originalPrice;
+            if (dealData.discountedPrice) wishlistItem.discountedPrice = dealData.discountedPrice;
+            if (dealData.discountType) wishlistItem.discountType = dealData.discountType;
+            if (dealData.retailerName) wishlistItem.retailerName = dealData.retailerName;
+            if (dealData.category) wishlistItem.category = dealData.category;
+            if (dealData.brand) wishlistItem.brand = dealData.brand;
+
+            // Add to wishlist array
+            userData.wishlist.push(wishlistItem);
+            
+            // Save to database
+            if (!userDoc.exists()) {
+                await setDoc(userRef, userData);
+            } else {
+                await updateDoc(userRef, {
+                    wishlist: userData.wishlist
+                });
+            }
+            
+            icon.classList.add('active');
+            icon.style.color = '#ff6547';
+        } else {
+            // Remove from wishlist array
+            userData.wishlist.splice(itemIndex, 1);
+            await updateDoc(userRef, {
+                wishlist: userData.wishlist
+            });
+            icon.classList.remove('active');
+            icon.style.color = '#666';
+        }
+    } catch (error) {
+        console.error('Error toggling wishlist:', error);
+        alert('Failed to update wishlist. Please try again.');
+    }
+}
+
+// Update showDealDetails function
+async function showDealDetails(deal) {
+    if (!currentUser) {
+        console.log('No user logged in');
+        return;
+    }
+
+    // Get fresh wishlist status before showing modal
+    let isInWishlist = false;
+    try {
+        const userRef = doc(wishlistDb, "users", currentUser.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const wishlist = userData.wishlist || [];
+            isInWishlist = wishlist.some(item => item.dealId === deal.id);
+        }
+    } catch (error) {
+        console.error('Error checking initial wishlist status:', error);
+    }
+
+        const imageUrl = deal.imageUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23cccccc'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='Arial, sans-serif' fill='%23666666'%3ENo Image%3C/text%3E%3C/svg%3E";
+        const originalPrice = deal.originalPrice ? `₹${deal.originalPrice}` : '';
+        const discountedPrice = deal.discountedPrice ? `₹${deal.discountedPrice}` : '';
+        const expiryDate = deal.expiryDate ? new Date(deal.expiryDate).toLocaleDateString() : 'No expiry';
+        const startDate = deal.createdAt ? new Date(deal.createdAt).toLocaleDateString() : 'Unknown';
+        
+        // Update image
+        const dealImage = productDetailView.querySelector('.deal-modal-image');
+        dealImage.src = imageUrl;
+        
+        // Update badge
+        const badge = productDetailView.querySelector('.deal-modal-badge');
+        if (deal.discountType) {
+            badge.textContent = deal.discountType;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+        
+        // Update title and wishlist icon
+        const titleSpan = productDetailView.querySelector('.deal-modal-title span');
+        titleSpan.textContent = deal.title || 'Untitled Deal';
+    
+    // Update wishlist icon
+    const wishlistIcon = productDetailView.querySelector('.wishlist-icon');
+    wishlistIcon.className = `fas fa-heart wishlist-icon ${isInWishlist ? 'active' : ''}`;
+    wishlistIcon.style.color = isInWishlist ? '#ff6547' : '#666';
+    wishlistIcon.onclick = () => toggleWishlist(wishlistIcon, deal);
+        
+        // Update price
+        const priceDiv = productDetailView.querySelector('.deal-modal-price');
+        priceDiv.innerHTML = `
+            ${originalPrice ? `<span style="text-decoration: line-through; color: #666; font-size: 14px;">${originalPrice}</span>` : ''}
+            ${discountedPrice ? `<span>${discountedPrice}</span>` : ''}
+        `;
+        
+        // Update description
+        productDetailView.querySelector('.deal-modal-description').textContent = deal.description || 'No description available';
+        
+        // Update dates
+        const dateItems = productDetailView.querySelectorAll('.deal-modal-date-item strong');
+        dateItems[0].textContent = startDate;
+        dateItems[1].textContent = expiryDate;
+        
+        // Update shop information
+        const shopName = productDetailView.querySelector('.shop-name-section p');
+        shopName.textContent = deal.retailerName || 'Unknown';
+        
+        const shopDetails = productDetailView.querySelector('.shop-details');
+        shopDetails.innerHTML = `
+                            <div class="shop-detail-item">
+                                <strong>Category:</strong> ${deal.category || 'Uncategorized'}
+                            </div>
+                            ${deal.brand ? `
+                                <div class="shop-detail-item">
+                                    <strong>Brand:</strong> ${deal.brand}
+                                </div>
+                            ` : ''}
+        `;
+        
+        // Update features
+        const featuresSection = productDetailView.querySelector('.features-section');
+        if (deal.features) {
+            featuresSection.innerHTML = `
+                <h3>Product Features</h3>
+                <p>${deal.features}</p>
+            `;
+            featuresSection.style.display = 'block';
+        } else {
+            featuresSection.style.display = 'none';
+        }
+        
+        // Update specifications
+        const specificationsSection = productDetailView.querySelector('.specifications-section');
+        if (deal.specifications) {
+            specificationsSection.innerHTML = `
+                        <h3>Specifications</h3>
+                        <p>${deal.specifications}</p>
+            `;
+            specificationsSection.style.display = 'block';
+        } else {
+            specificationsSection.style.display = 'none';
+        }
+        
+        // Update terms
+        const termsDiv = productDetailView.querySelector('.deal-modal-terms');
+        if (deal.terms) {
+            termsDiv.innerHTML = `
+                    <h3>Terms & Conditions</h3>
+                    <p>${deal.terms}</p>
+        `;
+            termsDiv.style.display = 'block';
+        } else {
+            termsDiv.style.display = 'none';
+        }
+        
+        // Show the detail view
+        productDetailView.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Add image click functionality
+        dealImage.onclick = function() {
+            const imageViewerModal = document.getElementById('imageViewerModal');
+            const viewerImage = document.getElementById('viewerImage');
+            viewerImage.src = this.src;
+            imageViewerModal.classList.add('show');
+        }
+        
+        // Add back button functionality
+        const modalBackBtn = productDetailView.querySelector('.modal-back-btn');
+        modalBackBtn.onclick = function(e) {
+            e.preventDefault();
+            productDetailView.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Add image viewer close functionality
+        const imageViewerClose = document.querySelector('.image-viewer-close');
+        imageViewerClose.onclick = function() {
+            document.getElementById('imageViewerModal').classList.remove('show');
+        }
+        
+        // Add image viewer click outside functionality
+        document.getElementById('imageViewerModal').onclick = function(e) {
+            if (e.target === this) {
+                this.classList.remove('show');
+            }
+        }
+    }
+
+    // Handle menu item clicks
+    menuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const tab = item.dataset.tab;
+            menuItems.forEach(i => i.classList.remove('active'));
+            contentSections.forEach(section => section.classList.remove('active'));
+            item.classList.add('active');
+            document.getElementById(tab).classList.add('active');
+        });
+    });
+
+    // Handle back button click
+    backButton.addEventListener('click', () => {
+        productDetailView.classList.remove('active');
+        document.body.style.overflow = '';
+    });
+
+    // Handle image click in detail view
+    document.querySelector('.detail-image').addEventListener('click', function() {
+        const fullScreenImage = document.createElement('div');
+        fullScreenImage.className = 'full-screen-image';
+        fullScreenImage.innerHTML = `
+            <button class="close-full-screen">&times;</button>
+            <img src="${this.src}" alt="Full size image">
+        `;
+        document.body.appendChild(fullScreenImage);
+        fullScreenImage.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Handle close button click
+        const closeFullScreen = fullScreenImage.querySelector('.close-full-screen');
+        closeFullScreen.addEventListener('click', () => {
+            fullScreenImage.remove();
+            document.body.style.overflow = '';
+        });
+
+        // Handle clicking outside the image
+        fullScreenImage.addEventListener('click', (e) => {
+            if (e.target === fullScreenImage) {
+                fullScreenImage.remove();
+                document.body.style.overflow = '';
+            }
+        });
+    });
+
+    // Handle wishlist button click
+    document.querySelector('.wishlist-button').addEventListener('click', async function() {
+        if (!currentUser) {
+            alert('Please login to add items to wishlist');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        try {
+            const userQuery = query(collection(db, "users"), where("email", "==", "venba123@gmil.com"));
+            const userSnapshot = await getDocs(userQuery);
+            
+            if (!userSnapshot.empty) {
+                const userDoc = userSnapshot.docs[0];
+                const wishlistRef = collection(db, 'users', userDoc.id, 'wishlist');
+                const wishlistQuery = query(wishlistRef, where("dealId", "==", deal.id));
+                const querySnapshot = await getDocs(wishlistQuery);
+                
+                if (querySnapshot.empty) {
+                    await addDoc(wishlistRef, {
+                        dealId: deal.id,
+                        addedAt: new Date()
+                    });
+                    this.textContent = 'Added to wishlist';
+                    this.style.backgroundColor = '#e41e31';
+                    this.style.color = 'white';
+                } else {
+                    alert('This item is already in your wishlist');
+                }
+            }
+        } catch (error) {
+            console.error('Error adding to wishlist:', error);
+            alert('Failed to add item to wishlist. Please try again.');
+        }
+    });
+
+    // Fetch deal details from Firestore
+    async function fetchDealDetails(dealId) {
+        try {
+            const dealDoc = await getDoc(doc(dealsDb, dealId));
+            if (dealDoc.exists()) {
+                return { id: dealDoc.id, ...dealDoc.data() };
+            }
+        } catch (error) {
+            console.error('Error fetching deal details:', error);
+        }
+        return null;
+    }
+
+    // Save clicked deal to the second database (wishlistDb)
+    async function saveClickedDealToWishlistDb(deal, userId, wishlistDb) {
+        if (!userId) {
+            console.warn('User is not authenticated. Clicked deals will not be saved.');
+            return;
+        }
+
+        try {
+            const userRef = doc(wishlistDb, 'users', userId);
+            const userDoc = await getDoc(userRef);
+            let clickedDeals = [];
+
+            if (userDoc.exists()) {
+                clickedDeals = userDoc.data().clickedDeals || [];
+            }
+
+            // Add the clicked deal to the array if it doesn't already exist
+            if (!clickedDeals.some(d => d.id === deal.id)) {
+                clickedDeals.push(deal);
+            }
+
+            // Save the updated clicked deals back to the database
+            await setDoc(userRef, { clickedDeals }, { merge: true });
+            console.log(`Clicked deal "${deal.title}" saved to wishlistDb for user ${userId}`);
+        } catch (error) {
+            console.error('Error saving clicked deal to wishlistDb:', error);
+        }
+    }
+
+    // Add event listener for deal clicks
+    document.querySelectorAll('.product-item').forEach(item => {
+        item.addEventListener('click', async function () {
+            const dealId = this.getAttribute('data-product-id');
+            const dealData = await fetchDealDetails(dealId);
+            if (dealData) {
+                const userId = localStorage.getItem('loggedInUserId'); // Assuming user ID is stored in localStorage
+                if (userId) {
+                    saveClickedDealToWishlistDb(dealData, userId, wishlistDb); // Save clicked deal to wishlistDb
+                }
+                showDealDetails(dealData); // Show deal details
+            }
+        });
+    });
+});
+</script>
+
+</html>

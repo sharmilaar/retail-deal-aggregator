@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            background-color: #f8f8f8;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 150px;
+            background-color:#ffcbcb;
+            padding: 10px;
+            height: 100vh;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .sidebar ul li:hover {
+            background-color: #ddd;
+            border-radius: 10px;
+        }
+
+        /* Circular Images */
+        .sidebar ul li img,
+        .subcategory-item img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ddd;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding:7px;
+            background-color: white;
+            
+           /* Reduced gap between sidebar and main content */
+        }
+
+        /* Add back button styles */
+        .back-btn {
+            text-decoration: none;
+            color: #333;
+            font-size: 24px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: #ff6547;
+            background-color: rgba(255, 101, 71, 0.1);
+        }
+
+        /* Header styles update */
+        .header {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 10px;
+            background-color: white;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+            gap: 15px;
+        }
+
+        .search-bar {
+            flex: 1;
+            margin-left: 10px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 8px 35px 8px 15px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .search-bar i {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+
+        .category-section {
+            margin-top: 10px;
+        }
+
+        .subcategory-group {
+            margin-bottom: 30px; /* Increased space between subcategory sections */
+        }
+
+        .subcategory-group h3 {
+            font-size: 17px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .subcategory-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .subcategory-item {
+            width: 100px;
+            text-align: center;
+            font-size: 14px;
+            padding: 5px;
+            cursor: pointer;
+            background: white;
+            transition: background 0.3s;
+        }
+
+        .subcategory-item:hover {
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+
+        .subcategory-item p {
+            margin-top: 5px;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                box-shadow: none;
+                display: flex;
+                overflow-x: auto;
+            }
+
+            .sidebar ul {
+                display: flex;
+            }
+
+            .sidebar ul li {
+                flex: none;
+                margin: 5px;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        .discount-filters {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            overflow-x: auto;
+            background: white;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+
+        .discount-filters::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+
+        .discount-filter {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            color: #666;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .discount-filter.active {
+            background: #ff6547;
+            color: white;
+            border-color: #ff6547;
+            font-weight: 500;
+        }
+
+        .discount-filter.active::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background: #ff6547;
+            border-radius: 2px;
+        }
+
+        .discount-items {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Changed to 2 columns */
+            gap: 15px;
+            padding: 10px;
+            background: #f8f8f8;
+        }
+
+        .discount-item {
+            background: white;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            position: relative;
+            width: 100%;
+            margin: 0;
+        }
+
+        .discount-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .discount-item img {
+            width: 100%;
+            height: 150px; /* Adjusted height for better proportions */
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .discount-item h4 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.3;
+            height: 2.6em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .discount-item p {
+            color: #666;
+            font-size: 12px;
+            margin: 8px 0;
+            height: 3em;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        .discount-item .shop-info {
+            font-size: 11px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .discount-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff6547;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 480px) {
+            .discount-filters {
+                padding: 8px;
+            }
+
+            .discount-filter {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+
+            .discount-items {
+                grid-template-columns: repeat(2, 1fr); /* Keep 2 columns on mobile */
+                gap: 10px;
+                padding: 8px;
+            }
+
+            .discount-item {
+                padding: 8px;
+            }
+
+            .discount-item img {
+                height: 120px; /* Slightly smaller on mobile */
+            }
+        }
+
+        /* Update modal styles for better description */
+        .deal-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .deal-modal-content {
+            background-color: white;
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            padding-bottom: 20px;
+        }
+
+        /* Remove the close button styles since we'll use back button */
+        .deal-modal-close {
+            display: none;
+        }
+
+        /* Update header styles for modal */
+        .modal-header {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 10px;
+            background-color: white;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 1001;
+        }
+
+        .modal-back-btn {
+            text-decoration: none;
+            color: #333;
+            font-size: 24px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-back-btn:hover {
+            color: #ff6547;
+            background-color: rgba(255, 101, 71, 0.1);
+        }
+
+        .modal-title {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .deal-modal-image {
+            width: 100%;
+            height: 300px;
+            object-fit: contain;
+            background: #f8f8f8;
+            padding: 20px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .deal-modal-title {
+            font-size: 20px;
+            color: #333;
+            margin: 15px;
+            line-height: 1.4;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .wishlist-icon {
+            font-size: 24px;
+            color: #666;
+            cursor: pointer;
+            padding: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .wishlist-icon:hover {
+            color: #ff6547;
+            transform: scale(1.1);
+        }
+
+        .wishlist-icon.active {
+            color: #ff6547;
+        }
+
+        .deal-modal-price {
+            font-size: 18px;
+            color: #ff6547;
+            font-weight: bold;
+            margin: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: #fff5f3;
+            border-radius: 8px;
+        }
+
+        .deal-modal-badge {
+            display: inline-block;
+            background: #ff6547;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin: 15px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(255, 101, 71, 0.2);
+        }
+
+        .deal-modal-description {
+            color: #444;
+            margin: 0 15px 15px;
+            line-height: 1.6;
+            font-size: 15px;
+            padding: 15px;
+            background: #f8f8f8;
+            border-radius: 8px;
+        }
+
+        .deal-modal-info {
+            background-color: white;
+            padding: 15px;
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .deal-modal-info-section {
+            margin-bottom: 20px;
+        }
+
+        .deal-modal-info-section h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .shop-name-section {
+            background: #fff5f3;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ff6547;
+            box-shadow: 0 2px 4px rgba(255, 101, 71, 0.1);
+        }
+
+        .shop-name-section h3 {
+            color: #ff6547;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .shop-name-section p {
+            color: #333;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 101, 71, 0.2);
+        }
+
+        .shop-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .shop-detail-item {
+            background: #f8f8f8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .shop-detail-item strong {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .deal-modal-info-section p {
+            margin: 8px 0;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .deal-modal-info-section p strong {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .deal-modal-divider {
+            height: 1px;
+            background: #eee;
+            margin: 15px 0;
+        }
+
+        .deal-modal-terms {
+            background: #fff5f3;
+            padding: 15px;
+            margin: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ff6547;
+        }
+
+        .deal-modal-terms h3 {
+            color: #ff6547;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .deal-modal-terms p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .deal-modal-dates {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f8f8;
+            margin: 15px;
+            border-radius: 8px;
+        }
+
+        .deal-modal-date-item {
+            text-align: center;
+        }
+
+        .deal-modal-date-item span {
+            display: block;
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .deal-modal-date-item strong {
+            color: #333;
+            font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .deal-modal-content {
+                width: 100%;
+            }
+        }
+
+        /* Add image viewer modal styles */
+        .image-viewer-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .image-viewer-modal.show {
+            display: flex;
+        }
+
+        .image-viewer-content {
+            max-width: 100%;
+            max-height: 100%;
+            position: relative;
+            padding: 20px;
+        }
+
+        .image-viewer-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .image-viewer-close {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            color: #333;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 2001;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .image-viewer-close:hover {
+            background: #ff6547;
+            color: white;
+        }
+
+        /* Update deal modal image to show pointer cursor */
+        .deal-modal-image {
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .deal-modal-image:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <!-- Add FontAwesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Update Deal Modal -->
+    <div id="dealModal" class="deal-modal">
+        <div class="deal-modal-content">
+            <div class="modal-header">
+                <a href="#" class="modal-back-btn" id="modalBackBtn">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <span class="modal-title">Deal Details</span>
+            </div>
+            <div id="dealModalContent"></div>
+        </div>
+    </div>
+
+    <!-- Add Image Viewer Modal -->
+    <div id="imageViewerModal" class="image-viewer-modal">
+        <span class="image-viewer-close">&times;</span>
+        <div class="image-viewer-content">
+            <img id="viewerImage" src="" alt="Full size image">
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <ul>
+            <li onclick="showMainSubcategories('clothing')">
+                <img src="../images/clothing_6903082.png" alt="Fashion">
+                <p>Clothing</p>
+            </li>
+            <li onclick="showMainSubcategories('footwear')">
+                <img src="../images/shoes_8614987.png" alt="Footwear">
+                <p>Footwear</p>
+            </li>
+            <li onclick="showMainSubcategories('electronics')">
+                <img src="../images/home-appliance.png" alt="Electronics">
+                <p>Electronics</p>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <a href="../../home.html" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="search-bar">
+                <input type="text" placeholder="Search..." id="search-input">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+
+        <div id="subcategories" class="category-section">
+            <!-- Subcategories will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <!-- Firebase Setup Script -->
+    <script type="module">
+        // Import Firebase modules at the top
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, deleteDoc, addDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
+
+        // Deals Database Config
+        const dealsConfig = {
+            apiKey: "AIzaSyBQ3UhKKRW19wD2oyjV-QbXp61FguwqSak",
+            authDomain: "seller-6975f.firebaseapp.com",
+            projectId: "seller-6975f",
+            storageBucket: "seller-6975f.firebasestorage.app",
+            messagingSenderId: "123675528821",
+            appId: "1:123675528821:web:bd9aac9a48bbad3a09723c",
+            measurementId: "G-5E37M5R2RM"
+        };
+
+        // Wishlist Database Config
+        const wishlistConfig = {
+            apiKey: "AIzaSyBhgQ-3m6DcXGZlDg6kq2Jx7Ei4ORHVJPE",
+authDomain: "login-form-f98c7.firebaseapp.com",
+projectId: "login-form-f98c7",
+storageBucket: "login-form-f98c7.firebasestorage.app",
+messagingSenderId: "174637943387",
+appId: "1:174637943387:web:45fe45fe97f2699ee04d7e",
+measurementId: "G-QX0XXWB1Q6"
+        };
+
+        // Initialize both Firebase instances
+        const dealsApp = initializeApp(dealsConfig, "deals");
+        const wishlistApp = initializeApp(wishlistConfig, "wishlist");
+        
+        const dealsDb = getFirestore(dealsApp);
+        const wishlistDb = getFirestore(wishlistApp);
+        
+        // Initialize Auth with the wishlist app
+        const auth = getAuth(wishlistApp);
+        
+        // Make Firebase resources available globally
+        window.dealsDb = dealsDb;
+        window.wishlistDb = wishlistDb;
+        window.firestoreCollection = collection;
+        window.firestoreQuery = query;
+        window.firestoreWhere = where;
+        window.firestoreGetDocs = getDocs;
+        window.firestoreDeleteDoc = deleteDoc;
+        window.firestoreAddDoc = addDoc;
+        window.firestoreUpdateDoc = updateDoc;
+        window.auth = auth;
+        
+        // Add authentication state listener
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log('User is signed in:', user.uid);
+                // User is signed in
+                window.currentUser = user;
+                localStorage.setItem('loggedInUserId', user.uid);
+                // Initialize the page content
+                initializePage();
+            } else {
+                console.log('No user is signed in');
+                // Check if we have a stored user ID
+                const storedUserId = localStorage.getItem('loggedInUserId');
+                if (!storedUserId) {
+                    // Only redirect if we don't have a stored user ID
+                    console.log('No stored user ID found, redirecting to login');
+                    window.location.href = 'login.html';
+                } else {
+                    // If we have a stored ID but no current user, try to restore the session
+                    console.log('Found stored user ID, attempting to restore session');
+                    window.currentUser = { uid: storedUserId };
+                    initializePage();
+                }
+            }
+        });
+
+        // Function to initialize page content
+        function initializePage() {
+            // Show default category
+            showMainSubcategories('clothing');
+            
+            // Set up search input listener
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(event) {
+                    const searchTerm = event.target.value.trim();
+                    searchDeals(searchTerm);
+                });
+            }
+        }
+
+        // Update saveSearchToHistory function
+        async function saveSearchToHistory(searchTerm) {
+            try {
+                const currentUser = window.currentUser;
+                if (!currentUser) {
+                    console.log('No user logged in');
+                    return;
+                }
+
+                const userRef = doc(wishlistDb, "users", currentUser.uid);
+                const userDoc = await getDoc(userRef);
+                
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    let searchHistory = userData.searchHistory || [];
+                    
+                    // Remove if exists and add to front
+                    searchHistory = searchHistory.filter(term => term !== searchTerm);
+                    searchHistory.unshift(searchTerm);
+                    
+                    // Keep only last 10 searches
+                    searchHistory = searchHistory.slice(0, 10);
+                    
+                    await updateDoc(userRef, {
+                        searchHistory: searchHistory
+                    });
+                    console.log('Search history updated for user:', currentUser.uid);
+                } else {
+                    // Create new user document if it doesn't exist
+                    await setDoc(userRef, {
+                        searchHistory: [searchTerm],
+                        createdAt: new Date()
+                    });
+                }
+            } catch (error) {
+                console.error('Error saving search history:', error);
+            }
+        }
+
+        // Update showDealDetails function to include wishlist functionality
+        window.showDealDetails = async function(dealData) {
+            const currentUser = window.currentUser;
+            if (!currentUser) {
+                console.log('No user logged in');
+                return;
+            }
+
+            // Get fresh wishlist status before showing modal
+            let isInWishlist = false;
+            try {
+                const userRef = doc(wishlistDb, "users", currentUser.uid);
+                const userDoc = await getDoc(userRef);
+                
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const wishlist = userData.wishlist || [];
+                    isInWishlist = wishlist.some(item => item.dealId === dealData.id);
+                }
+            } catch (error) {
+                console.error('Error checking initial wishlist status:', error);
+            }
+
+            const modal = document.getElementById('dealModal');
+            const modalContent = document.getElementById('dealModalContent');
+            
+            // Format dates
+            const expiryDate = dealData.expiryDate ? new Date(dealData.expiryDate).toLocaleDateString() : 'No expiry';
+            const startDate = dealData.createdAt ? new Date(dealData.createdAt).toLocaleDateString() : 'Unknown';
+            
+            // Format prices if available
+            const originalPrice = dealData.originalPrice ? `\u20B9${dealData.originalPrice}` : '';
+            const discountedPrice = dealData.discountedPrice ? `\u20B9${dealData.discountedPrice}` : '';
+            
+            // Create modal content with initial wishlist state
+            modalContent.innerHTML = `
+                <img src="${dealData.imageUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'200\' viewBox=\'0 0 300 200\'%3E%3Crect width=\'300\' height=\'200\' fill=\'%23cccccc\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'18\' text-anchor=\'middle\' alignment-baseline=\'middle\' font-family=\'Arial, sans-serif\' fill=\'%23666666\'%3ENo Image%3C/text%3E%3C/svg%3E'}" 
+                     alt="${dealData.title || 'Deal'}" 
+                     class="deal-modal-image"
+                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'200\' viewBox=\'0 0 300 200\'%3E%3Crect width=\'300\' height=\'200\' fill=\'%23cccccc\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'18\' text-anchor=\'middle\' alignment-baseline=\'middle\' font-family=\'Arial, sans-serif\' fill=\'%23666666\'%3ENo Image%3C/text%3E%3C/svg%3E'">
+                
+                ${dealData.discountType ? `<div class="deal-modal-badge">${dealData.discountType}</div>` : ''}
+                
+                <div class="deal-modal-title">
+                    <span>${dealData.title || 'Untitled Deal'}</span>
+                    <i class="fas fa-heart wishlist-icon ${isInWishlist ? 'active' : ''}" 
+                       style="color: ${isInWishlist ? '#ff6547' : '#666'}"
+                       onclick="window.toggleWishlist(this, ${JSON.stringify(dealData).replace(/"/g, '&quot;')})"></i>
+                </div>
+                
+                ${(originalPrice || discountedPrice) ? `
+                    <div class="deal-modal-price">
+                        ${originalPrice ? `<span style="text-decoration: line-through; color: #666; font-size: 14px;">${originalPrice}</span>` : ''}
+                        ${discountedPrice ? `<span>${discountedPrice}</span>` : ''}
+                    </div>
+                ` : ''}
+                
+                <div class="deal-modal-description">
+                    ${dealData.description || 'No description available'}
+                </div>
+                
+                <div class="deal-modal-dates">
+                    <div class="deal-modal-date-item">
+                        <span>Start Date</span>
+                        <strong>${startDate}</strong>
+                    </div>
+                    <div class="deal-modal-date-item">
+                        <span>Expiry Date</span>
+                        <strong>${expiryDate}</strong>
+                    </div>
+                </div>
+                
+                <div class="deal-modal-info">
+                    <div class="deal-modal-info-section">
+                        <div class="shop-name-section">
+                            <h3>Shop Information</h3>
+                            <p>${dealData.retailerName || 'Unknown'}</p>
+                            <div class="shop-details">
+                                <div class="shop-detail-item">
+                                    <strong>Category:</strong> ${dealData.category || 'Uncategorized'}
+                                </div>
+                                ${dealData.brand ? `
+                                    <div class="shop-detail-item">
+                                        <strong>Brand:</strong> ${dealData.brand}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${dealData.features ? `
+                        <div class="deal-modal-info-section">
+                            <h3>Product Features</h3>
+                            <p>${dealData.features}</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${dealData.specifications ? `
+                        <div class="deal-modal-info-section">
+                            <h3>Specifications</h3>
+                            <p>${dealData.specifications}</p>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                ${dealData.terms ? `
+                    <div class="deal-modal-terms">
+                        <h3>Terms & Conditions</h3>
+                        <p>${dealData.terms}</p>
+                    </div>
+                ` : ''}
+            `;
+            
+            // Show modal
+            modal.style.display = 'block';
+            
+            // Add back button functionality
+            const modalBackBtn = document.getElementById('modalBackBtn');
+            modalBackBtn.onclick = function(e) {
+                e.preventDefault();
+                modal.style.display = 'none';
+            }
+
+            // Add image click functionality
+            const dealImage = modalContent.querySelector('.deal-modal-image');
+            dealImage.onclick = function() {
+                const imageViewerModal = document.getElementById('imageViewerModal');
+                const viewerImage = document.getElementById('viewerImage');
+                viewerImage.src = this.src;
+                imageViewerModal.classList.add('show');
+            }
+        };
+
+        // Make functions available globally
+        window.toggleWishlist = async function(icon, dealData) {
+            try {
+                const currentUser = window.currentUser;
+                if (!currentUser) {
+                    alert('Please login to add items to wishlist');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Get user document reference from wishlist database
+                const userRef = doc(wishlistDb, "users", currentUser.uid);
+                const userDoc = await getDoc(userRef);
+                
+                let userData = {
+                    uid: currentUser.uid,
+                    email: currentUser.email || '',
+                    createdAt: new Date(),
+                    status: "active",
+                    wishlist: []
+                };
+
+                if (userDoc.exists()) {
+                    const existingData = userDoc.data();
+                    userData = {
+                        ...userData,
+                        ...existingData,
+                        wishlist: existingData.wishlist || []
+                    };
+                }
+
+                // Check if item is already in wishlist
+                const itemIndex = userData.wishlist.findIndex(item => item.dealId === dealData.id);
+
+                if (itemIndex === -1) {
+                    // Create wishlist item with only defined fields
+                    const wishlistItem = {
+                        dealId: dealData.id,
+                        createdAt: new Date()
+                    };
+
+                    // Add fields only if they are defined
+                    if (dealData.title) wishlistItem.title = dealData.title;
+                    if (dealData.description) wishlistItem.description = dealData.description;
+                    if (dealData.imageUrl) wishlistItem.imageUrl = dealData.imageUrl;
+                    if (dealData.originalPrice) wishlistItem.originalPrice = dealData.originalPrice;
+                    if (dealData.discountedPrice) wishlistItem.discountedPrice = dealData.discountedPrice;
+                    if (dealData.discountType) wishlistItem.discountType = dealData.discountType;
+                    if (dealData.retailerName) wishlistItem.retailerName = dealData.retailerName;
+                    if (dealData.category) wishlistItem.category = dealData.category;
+                    if (dealData.brand) wishlistItem.brand = dealData.brand;
+
+                    // Add to wishlist array
+                    userData.wishlist.push(wishlistItem);
+                    
+                    // Save to database
+                    if (!userDoc.exists()) {
+                        await setDoc(userRef, userData);
+                    } else {
+                        await updateDoc(userRef, {
+                            wishlist: userData.wishlist
+                        });
+                    }
+                    
+                    icon.classList.add('active');
+                    icon.style.color = '#ff6547';
+                } else {
+                    // Remove from wishlist array
+                    userData.wishlist.splice(itemIndex, 1);
+                    await updateDoc(userRef, {
+                        wishlist: userData.wishlist
+                    });
+                    icon.classList.remove('active');
+                    icon.style.color = '#666';
+                }
+            } catch (error) {
+                console.error('Error toggling wishlist:', error);
+                alert('Failed to update wishlist. Please try again.');
+            }
+        };
+
+        // Mock function to simulate fetching the logged-in user's ID
+        // Replace this with your actual authentication system logic
+        function getLoggedInUserId() {
+            // Example: Replace with actual logic to fetch the logged-in user's ID
+            return "exampleUserId"; // Replace with the actual user ID
+        }
+
+        // Ensure window.loggedInUserId is set
+        window.loggedInUserId = getLoggedInUserId();
+
+        async function fetchLoggedInUserDetails() {
+            try {
+                const loggedInUserId = window.loggedInUserId;
+                if (!loggedInUserId) {
+                    console.error("No logged-in user ID found. Ensure the authentication system sets 'window.loggedInUserId'.");
+                    return null;
+                }
+
+                // Fetch the user document from the database
+                const userDocRef = doc(window.wishlistDb, "users", loggedInUserId);
+                const userDoc = await getDoc(userDocRef);
+
+                if (userDoc.exists()) {
+                    return { id: userDoc.id, ...userDoc.data() };
+                } else {
+                    console.error("User document not found in the database.");
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error fetching logged-in user details:", error);
+                return null;
+            }
+        }
+
+        // Define the data for subcategories
+        const subcategoriesData = {
+            clothing: [
+                { desc: "Men's Clothing", subcategories: [
+                    { img: "../images/tshirt.webp", desc: "T-Shirts" },
+                    { img: "../images/formal.jpg", desc: "Formal Wear" }
+                ]},
+                { desc: "Women's Clothing", subcategories: [
+                    { img: "../images/saree.jpg", desc: "Sarees" },
+                    { img: "../images/kurta.jpg", desc: "Kurtas & Sets" }
+                ]}
+            ],
+            footwear: [
+                { desc: "Men's Shoes", subcategories: [
+                    { img: "../images/sandals.webp", desc: "Sandals" },
+                    { img: "../images/sport.jpg", desc: "Sport Shoes" }
+                ]},
+                { desc: "Women's Shoes", subcategories: [
+                    { img: "../images/heels.webp", desc: "Heels" },
+                    { img: "../images/flats.jpg", desc: "Flats" }
+                ]}
+            ],
+            electronics: [
+                { desc: "Home Appliances", subcategories: [
+                    { img: "../images/fridge.jpg", desc: "Refrigerators" },
+                    { img: "../images/wm.webp", desc: "Washing Machines" }
+                ]},
+                { desc: "Laptops", subcategories: [
+                    { img: "../images/gaming.avif", desc: "Gaming Laptops" },
+                    { img: "../images/mac.avif", desc: "MacBooks" }
+            ]}
+            ]
+        };
+
+        // Define subcategory mapping for database variations
+        const subcategoryMapping = {
+            // Clothing
+            "T-Shirts": ["tshirt", "t-shirt", "tee", "t shirt"],
+            "Formal Wear": [ "formals", "suits", "formal wear", "office wear"],
+            "Sarees": ["saree", "sari", "sarees"],
+            "Kurtas & Sets": ["kurta", "kurti", "kurtas", "kurta set"],
+            
+            // Footwear
+            "Sandals": ["sandal", "chappal", "flip-flop", "slipper"],
+            "Sport Shoes": ["sports", "running shoe", "athletic", "sneaker","shoes"],
+            "Heels": ["heel", "stiletto", "pumps", "high heel"],
+            "Flats": ["flats", "ballet", "loafer", "moccasin"],
+            
+            // Electronics
+            "Refrigerators": ["fridge", "refrigerator"],
+            "Washing Machines": ["washer", "laundry", "washing"],
+            "Gaming Laptops": ["gaming", "gaming pc", "gamer"],
+            "MacBooks": [ "macbook","pad"]
+        };
+
+        // Define discount categories for filtering
+        const discountCategories = {
+            "Sarees": [
+                { type: "50% Off", desc: "Up to 50% off on premium sarees" },
+                { type: "Buy 1 Get 1", desc: "Buy one saree and get another free" },
+                { type: "Combo Offer", desc: "Saree + Blouse piece combo deals" }
+            ],
+            "T-Shirts": [
+                { type: "40% Off", desc: "Up to 40% off on all t-shirts" },
+                { type: "Buy 2 Get 1", desc: "Buy two t-shirts and get one free" },
+                { type: "Season Sale", desc: "Seasonal discounts on t-shirts" }
+            ],
+            "Formal Wear": [
+                { type: "30% Off", desc: "Up to 30% off on formal wear" },
+                { type: "Combo Deal", desc: "Suit + Shirt combo offers" },
+                { type: "Clearance", desc: "Clearance sale on formal wear" }
+            ],
+            "Kurtas & Sets": [
+                { type: "25% Off", desc: "Up to 25% off on kurta sets" },
+                { type: "Buy 1 Get 1", desc: "Buy one kurta set and get another free" },
+                { type: "Festival Special", desc: "Special festival discounts" }
+            ],
+            "Sandals": [
+                { type: "35% Off", desc: "Up to 35% off on sandals" },
+                { type: "Buy 2 Get 1", desc: "Buy two sandals and get one free" },
+                { type: "Summer Sale", desc: "Summer special discounts" }
+            ],
+            "Sport Shoes": [
+                { type: "45% Off", desc: "Up to 45% off on sport shoes" },
+                { type: "Buy 1 Get 1", desc: "Buy one sport shoe and get another free" },
+                { type: "Brand Special", desc: "Special brand discounts" }
+            ],
+            "Heels": [
+                { type: "40% Off", desc: "Up to 40% off on heels" },
+                { type: "Buy 2 Get 1", desc: "Buy two heels and get one free" },
+                { type: "Party Special", desc: "Special party wear discounts" }
+            ],
+            "Flats": [
+                { type: "30% Off", desc: "Up to 30% off on flats" },
+                { type: "Buy 1 Get 1", desc: "Buy one flat and get another free" },
+                { type: "Comfort Sale", desc: "Special comfort wear discounts" }
+            ],
+            "Refrigerators": [
+                { type: "15% Off", desc: "Up to 15% off on refrigerators" },
+                { type: "Exchange Offer", desc: "Special exchange offers" },
+                { type: "Cashback", desc: "Get cashback on purchase" }
+            ],
+            "Washing Machines": [
+                { type: "20% Off", desc: "Up to 20% off on washing machines" },
+                { type: "Exchange Offer", desc: "Special exchange offers" },
+                { type: "Cashback", desc: "Get cashback on purchase" }
+            ],
+            "Gaming Laptops": [
+                { type: "10% Off", desc: "Up to 10% off on gaming laptops" },
+                { type: "Free Accessories", desc: "Get free gaming accessories" },
+                { type: "EMI Available", desc: "Easy EMI options" }
+            ],
+            "MacBooks": [
+                { type: "5% Off", desc: "Up to 5% off on MacBooks" },
+                { type: "Free Accessories", desc: "Get free accessories" },
+                { type: "Student Discount", desc: "Special student discounts" }
+            ]
+        };
+
+        // Make functions available globally
+        window.showMainSubcategories = function(category) {
+            console.log("Showing subcategories for category:", category);
+        const subcategoriesContainer = document.getElementById('subcategories');
+        subcategoriesContainer.innerHTML = '';
+
+        const mainSubcategories = subcategoriesData[category];
+
+        mainSubcategories.forEach(group => {
+            const subcategoryGroup = document.createElement('div');
+            subcategoryGroup.classList.add('subcategory-group');
+
+            const groupTitle = document.createElement('h3');
+            groupTitle.textContent = group.desc;
+            subcategoryGroup.appendChild(groupTitle);
+
+            const subcategoryList = document.createElement('div');
+            subcategoryList.classList.add('subcategory-list');
+
+            group.subcategories.forEach(subcategory => {
+                const subcategoryItem = document.createElement('div');
+                subcategoryItem.classList.add('subcategory-item');
+                        
+                    // Set the click handler for the subcategory
+                    subcategoryItem.onclick = function() {
+                        console.log("Clicked on subcategory:", subcategory.desc);
+                        showDiscountCategories(subcategory.desc);
+                    };
+
+                const subcategoryImage = document.createElement('img');
+                subcategoryImage.src = subcategory.img;
+                subcategoryImage.alt = subcategory.desc;
+
+                const subcategoryDesc = document.createElement('p');
+                subcategoryDesc.textContent = subcategory.desc;
+
+                subcategoryItem.appendChild(subcategoryImage);
+                subcategoryItem.appendChild(subcategoryDesc);
+
+                subcategoryList.appendChild(subcategoryItem);
+            });
+
+            subcategoryGroup.appendChild(subcategoryList);
+            subcategoriesContainer.appendChild(subcategoryGroup);
+        });
+        };
+
+        window.showDiscountCategories = function(subcategory) {
+            console.log("Showing discount categories for subcategory:", subcategory);
+            const subcategoriesContainer = document.getElementById('subcategories');
+            subcategoriesContainer.innerHTML = '';
+
+            // Create discount filters
+            const discountFilters = document.createElement('div');
+            discountFilters.classList.add('discount-filters');
+
+            // Add "All" option first
+            const allFilter = document.createElement('div');
+            allFilter.classList.add('discount-filter', 'active');
+            allFilter.textContent = "All";
+            allFilter.onclick = function() {
+                showDiscountItems(subcategory, "All", allFilter);
+            };
+            discountFilters.appendChild(allFilter);
+
+            if (discountCategories[subcategory]) {
+                discountCategories[subcategory].forEach(discount => {
+                    const filter = document.createElement('div');
+                    filter.classList.add('discount-filter');
+                    filter.textContent = discount.type;
+                    filter.onclick = function() {
+                        showDiscountItems(subcategory, discount.type, filter);
+                    };
+                    discountFilters.appendChild(filter);
+                });
+            }
+
+            subcategoriesContainer.appendChild(discountFilters);
+
+            // Show all items by default
+            showDiscountItems(subcategory, "All", allFilter);
+        };
+
+        // Function to fetch and display deals from Firestore
+        async function showDiscountItems(subcategory, discountType, activeFilter) {
+            console.log("Fetching items for subcategory:", subcategory, "discount type:", discountType);
+            
+            // Update active filter styling
+            document.querySelectorAll('.discount-filter').forEach(filter => {
+                filter.classList.remove('active');
+            });
+            activeFilter.classList.add('active');
+
+            // Create items container
+            const itemsContainer = document.createElement('div');
+            itemsContainer.classList.add('discount-items');
+
+            // Show loading message
+            const loadingMessage = document.createElement('div');
+            loadingMessage.textContent = discountType === "All" ? 
+                'Loading all items...' : 
+                `Loading ${discountType} items...`;
+            loadingMessage.style.textAlign = 'center';
+            loadingMessage.style.padding = '20px';
+            loadingMessage.style.color = '#666';
+            itemsContainer.appendChild(loadingMessage);
+
+            // Remove existing items container if any
+            const existingContainer = document.querySelector('.discount-items');
+            if (existingContainer) {
+                existingContainer.remove();
+            }
+
+            document.getElementById('subcategories').appendChild(itemsContainer);
+
+            try {
+                // Wait for Firebase to be ready if needed
+                if (!window.firebaseReady) {
+                    console.log("Waiting for Firebase to initialize...");
+                    await new Promise((resolve) => {
+                        const firebaseReadyHandler = () => {
+                            window.removeEventListener('firebaseReady', firebaseReadyHandler);
+                            resolve();
+                        };
+                        window.addEventListener('firebaseReady', firebaseReadyHandler);
+                        // Add timeout in case Firebase fails to load
+                        setTimeout(resolve, 5000);
+                    });
+                }
+                
+                if (!window.dealsDb || !window.firestoreCollection) {
+                    throw new Error("Firebase is not properly initialized");
+                }
+                
+                // Get possible category variations from the mapping
+                const possibleCategories = [subcategory];
+                
+                // Add variations from mapping if they exist
+                if (subcategoryMapping[subcategory]) {
+                    possibleCategories.push(...subcategoryMapping[subcategory]);
+                }
+                
+                console.log("Searching for categories:", possibleCategories);
+                
+                // Fetch all active deals and filter locally for better matching
+                const dealsQuery = window.firestoreQuery(
+                    window.firestoreCollection(window.dealsDb, "deals"),
+                    window.firestoreWhere("status", "==", "active")
+                );
+                
+                // Execute the query
+                const dealsSnapshot = await window.firestoreGetDocs(dealsQuery);
+                console.log(`Query completed. Found ${dealsSnapshot.size} total active deals`);
+                
+                // Clear the loading message
+                itemsContainer.innerHTML = '';
+                
+                // Filter deals that match our criteria
+                const matchingDeals = [];
+                
+                dealsSnapshot.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() };
+                    let isMatch = false;
+                    
+                    // Check if category matches any of our possible categories (exact or partial match)
+                    if (data.category) {
+                        // Try exact match first
+                        if (possibleCategories.some(cat => 
+                            data.category.toLowerCase() === cat.toLowerCase())) {
+                            isMatch = true;
+                        } 
+                        // Then try partial match
+                        else if (possibleCategories.some(cat => 
+                            data.category.toLowerCase().includes(cat.toLowerCase()) || 
+                            cat.toLowerCase().includes(data.category.toLowerCase()))) {
+                            isMatch = true;
+                        }
+                    }
+                    
+                    // If category didn't match, try matching on title or description
+                    if (!isMatch && data.title) {
+                        if (possibleCategories.some(cat => 
+                            data.title.toLowerCase().includes(cat.toLowerCase()))) {
+                            isMatch = true;
+                        }
+                    }
+                    
+                    if (!isMatch && data.description) {
+                        if (possibleCategories.some(cat => 
+                            data.description.toLowerCase().includes(cat.toLowerCase()))) {
+                            isMatch = true;
+                        }
+                    }
+                    
+                    // If we're filtering by discount type, check that too
+                    if (isMatch && discountType !== "All" && data.discountType) {
+                        isMatch = data.discountType.toLowerCase().includes(discountType.toLowerCase()) ||
+                                 discountType.toLowerCase().includes(data.discountType.toLowerCase());
+                    }
+                    
+                    if (isMatch) {
+                        matchingDeals.push(data);
+                    }
+                });
+                
+                console.log(`Found ${matchingDeals.length} matching deals`);
+                
+                // Display the matching deals or a message if none were found
+                if (matchingDeals.length > 0) {
+                    matchingDeals.forEach(dealData => {
+                        createAndAppendDealCard(dealData, itemsContainer);
+                    });
+                } else {
+                    const noDealsMessage = document.createElement('div');
+                    noDealsMessage.textContent = `No ${subcategory} deals found ${discountType !== 'All' ? `with ${discountType}` : ''}`;
+                    noDealsMessage.style.textAlign = 'center';
+                    noDealsMessage.style.padding = '30px';
+                    noDealsMessage.style.color = '#666';
+                    itemsContainer.appendChild(noDealsMessage);
+                }
+                
+            } catch (error) {
+                console.error("Error fetching deals:", error);
+                
+                // Display error message
+                itemsContainer.innerHTML = '';
+                const errorMessage = document.createElement('div');
+                errorMessage.textContent = `Error loading deals: ${error.message}. Please try again.`;
+                errorMessage.style.textAlign = 'center';
+                errorMessage.style.padding = '30px';
+                errorMessage.style.color = '#f44336';
+                itemsContainer.appendChild(errorMessage);
+            }
+        }
+        
+        // Helper function to create and append a deal card
+        function createAndAppendDealCard(dealData, container) {
+            const dealItem = document.createElement('div');
+            dealItem.classList.add('discount-item');
+            
+            const imageUrl = dealData.imageUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='%23cccccc'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='Arial, sans-serif' fill='%23666666'%3ENo Image%3C/text%3E%3C/svg%3E";
+            
+            const discountBadge = dealData.discountType ? `<div class="discount-badge">${dealData.discountType}</div>` : '';
+            
+            const expiryDate = dealData.expiryDate ? new Date(dealData.expiryDate).toLocaleDateString() : 'No expiry';
+            
+            dealItem.innerHTML = `
+                <img src="${imageUrl}" alt="${dealData.title || 'Deal'}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'300\\' height=\\'200\\' viewBox=\\'0 0 300\\'200\\'%3E%3Crect width=\\'300\\' height=\\'200\\' fill=\\'%23cccccc\\'/%3E%3Ctext x=\\'50%25\\' y=\\'50%25\\' font-size=\\'18\\' text-anchor=\\'middle\\' alignment-baseline=\\'middle\\' font-family=\\'Arial, sans-serif\\' fill=\\'%23666666\\'%3ENo Image%3C/text%3E%3C/svg%3E'">
+                ${discountBadge}
+                <h4>${dealData.title || 'Untitled Deal'}</h4>
+                <p>${dealData.description ? (dealData.description.substring(0, 50) + (dealData.description.length > 50 ? '...' : '')) : 'No description available'}</p>
+                <div class="shop-info">
+                    <strong>Shop:</strong> ${dealData.retailerName || 'Unknown'}<br>
+                    <strong>Expires:</strong> ${expiryDate}
+                </div>
+            `;
+            
+            // Update click handler to show modal
+            dealItem.addEventListener('click', () => {
+                showDealDetails(dealData);
+            });
+            
+            container.appendChild(dealItem);
+        }
+
+        // Add searchDeals function
+        async function searchDeals(searchTerm) {
+            console.log("Searching for deals with term:", searchTerm);
+            
+            if (!searchTerm || searchTerm.trim() === '') {
+                // If search is empty, return to default view
+                showMainSubcategories('clothing');
+                return;
+            }
+            
+            // Save search term to history
+            await saveSearchToHistory(searchTerm);
+            
+            const searchTermLower = searchTerm.toLowerCase().trim();
+            
+            // Create items container
+            const subcategoriesContainer = document.getElementById('subcategories');
+            subcategoriesContainer.innerHTML = '';
+            
+            const itemsContainer = document.createElement('div');
+            itemsContainer.classList.add('discount-items');
+            
+            // Show loading message
+            const loadingMessage = document.createElement('div');
+            loadingMessage.textContent = 'Searching for deals...';
+            loadingMessage.style.textAlign = 'center';
+            loadingMessage.style.padding = '20px';
+            loadingMessage.style.color = '#666';
+            itemsContainer.appendChild(loadingMessage);
+            
+            subcategoriesContainer.appendChild(itemsContainer);
+            
+            try {
+                // Fetch all active deals
+                const dealsQuery = window.firestoreQuery(
+                    window.firestoreCollection(window.dealsDb, "deals"),
+                    window.firestoreWhere("status", "==", "active")
+                );
+                
+                // Execute the query
+                const dealsSnapshot = await window.firestoreGetDocs(dealsQuery);
+                console.log(`Query completed. Found ${dealsSnapshot.size} total active deals to search through`);
+                
+                // Clear the loading message
+                itemsContainer.innerHTML = '';
+                
+                // Filter deals based on search term
+                const matchingDeals = [];
+                
+                dealsSnapshot.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() };
+                    
+                    // Check if any field contains the search term
+                    if ((data.title && data.title.toLowerCase().includes(searchTermLower)) ||
+                        (data.description && data.description.toLowerCase().includes(searchTermLower)) ||
+                        (data.category && data.category.toLowerCase().includes(searchTermLower)) ||
+                        (data.retailerName && data.retailerName.toLowerCase().includes(searchTermLower)) ||
+                        (data.discountType && data.discountType.toLowerCase().includes(searchTermLower))) {
+                        matchingDeals.push(data);
+                    }
+                });
+                
+                console.log(`Found ${matchingDeals.length} matching deals for search term "${searchTerm}"`);
+                
+                // Display the matching deals or a message if none were found
+                if (matchingDeals.length > 0) {
+                    matchingDeals.forEach(dealData => {
+                        createAndAppendDealCard(dealData, itemsContainer);
+                    });
+                } else {
+                    const noDealsMessage = document.createElement('div');
+                    noDealsMessage.textContent = `No deals found for "${searchTerm}"`;
+                    noDealsMessage.style.textAlign = 'center';
+                    noDealsMessage.style.padding = '30px';
+                    noDealsMessage.style.color = '#666';
+                    itemsContainer.appendChild(noDealsMessage);
+                }
+                
+            } catch (error) {
+                console.error("Error searching for deals:", error);
+                
+                // Display error message
+                itemsContainer.innerHTML = '';
+                const errorMessage = document.createElement('div');
+                errorMessage.textContent = `Error searching for deals: ${error.message}. Please try again.`;
+                errorMessage.style.textAlign = 'center';
+                errorMessage.style.padding = '30px';
+                errorMessage.style.color = '#f44336';
+                itemsContainer.appendChild(errorMessage);
+            }
+        }
+
+        // Add event listener to the search input field
+        document.getElementById('search-input').addEventListener('input', function (event) {
+            const searchTerm = event.target.value.trim();
+            searchDeals(searchTerm);
+        });
+    </script>
+
+</body>
+</html>

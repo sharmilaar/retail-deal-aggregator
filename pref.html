@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Your Preferences</title>
+    <link rel="stylesheet" href="../css files/login_style.css">
+    <link rel="stylesheet" href="../css files/preferences.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+   
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <div class="preference-container">
+        <div class="pref-header">
+            <h2>Set Your Preferences</h2>
+            <p>Select your favorite stores and categories to personalize your experience.</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="storeSearch" placeholder="Search stores...">
+            </div>
+        </div>
+
+        <!-- Store Categories Filter -->
+        <div class="filter-container">
+            <div class="filter-scroll">
+                <button class="filter-btn active" data-category="all">All</button>
+                <button class="filter-btn" data-category="clothing">Clothing</button>
+                <button class="filter-btn" data-category="footwear">Footwear</button>
+                <button class="filter-btn" data-category="electronics">Electronics</button>
+            </div>
+        </div>
+
+        <!-- Stores Section -->
+        <div class="section">
+            <div class="section-header">
+                <h3>Favorite Stores</h3>
+                <span class="selected-count">0 selected</span>
+            </div>
+            <div class="stores-container">
+                <div class="stores-list" id="storesList">
+                    <!-- Store items will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories Section -->
+        <div class="section">
+            <div class="section-header">
+                <h3>Favorite Categories</h3>
+                <span class="selected-count">0 selected</span>
+            </div>
+            <div class="categories-grid">
+                <button class="category" data-type="category" data-value="Clothing">
+                    <i class="fas fa-tshirt"></i>
+                    <span>Clothing</span>
+                </button>
+                <button class="category" data-type="category" data-value="Footwear">
+                    <i class="fas fa-shoe-prints"></i>
+                    <span>Footwear</span>
+                </button>
+                <button class="category" data-type="category" data-value="Electronics">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Electronics</span>
+                </button>
+            </div>
+        </div>
+
+        <button id="savePreferences" class="save-btn">
+            <i class="fas fa-check"></i>
+            Save Preferences
+        </button>
+    </div>
+
+    <script src="../../backend/javascript file/prefer.js"></script>
+</body>
+</html>

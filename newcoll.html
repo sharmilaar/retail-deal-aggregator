@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <title>Create New Collection</title>
+    <style>
+        body {
+            background-color: white;
+            max-width: 480px;
+            margin: auto;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            background-color: #ff6347;
+            color: white;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .back-btn {
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .content {
+            padding: 16px;
+        }
+
+        .content h2 {
+            margin-bottom: 16px;
+        }
+
+        .content input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .content .radio-group {
+            margin-bottom: 16px;
+        }
+
+        .content .radio-group label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .content .radio-group input[type="radio"] {
+            margin-right: 8px;
+        }
+
+        .content button {
+            background: #ff6347;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="back-btn" onclick="window.location.href='wishlist.html'"><i class="fas fa-arrow-left"></i></span>
+        Create New Collection
+    </div>
+    <div class="content">
+        <h2>New Collection</h2>
+        <input type="text" id="collection-name" placeholder="Collection Name" />
+        <div class="radio-group">
+            <label><input type="radio" name="share-setting" value="private" checked> Private</label>
+            <label><input type="radio" name="share-setting" value="share-only-with"> Share only with...</label>
+        </div>
+        <button onclick="createCollection()">Create Collection</button>
+    </div>
+
+    <script>
+        function createCollection() {
+            const name = document.getElementById('collection-name').value;
+            const shareSetting = document.querySelector('input[name="share-setting"]:checked').value;
+
+            if (name) {
+                const collection = { name, shareSetting };
+                let collections = JSON.parse(localStorage.getItem('collections')) || [];
+                collections.push(collection);
+                localStorage.setItem('collections', JSON.stringify(collections));
+                window.location.href = 'wishlist.html';
+            } else {
+                alert('Please enter a collection name.');
+            }
+        }
+    </script>
+</body>
+</html>

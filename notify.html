@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal Discovery - Notifications</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <!-- Add Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: white;
+            max-width: 480px;
+            margin: auto;
+            padding-bottom: 70px; /* Add padding to the bottom to avoid overlap */
+        }
+
+        .notification-section {
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            text-align: center;
+            margin: 20px auto;
+        }
+
+        .notification-header {
+            background: linear-gradient(90deg, #ff3e3e, #ff8a65);
+            color: white;
+            padding: 12px;
+            font-size: 1.4em;
+            font-weight: bold;
+           
+        }
+
+        .notification-list {
+            display: none;
+            padding: 10px;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: center;
+            margin: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            transition: transform 0.3s, box-shadow 0.3s;
+            font-size: 0.9em;
+        }
+
+        .notification-item.red { background: linear-gradient(120deg, #ff4e50, #f9d423); }
+        .notification-item.blue { background: linear-gradient(120deg, #36d1dc, #5b86e5); }
+        .notification-item.yellow { background: linear-gradient(120deg, #f6d365, #fda085); }
+        .notification-item.purple { background: linear-gradient(120deg, #833ab4, #fd1d1d); }
+
+        .icon {
+            font-size: 2em;
+            margin-right: 10px;
+        }
+
+        .notification-content {
+            flex-grow: 1;
+        }
+
+        .notification-title {
+            margin: 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .notification-message {
+            margin: 3px 0 0;
+            font-size: 0.9em;
+        }
+
+        .timestamp {
+            font-size: 0.8em;
+            font-weight: bold;
+            opacity: 0.7;
+        }
+
+        .taskbar {
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
+            background: linear-gradient(90deg, #6a11cb, #2575fc);
+            color: white;
+            padding: 10px;
+        }
+
+        .taskbar-item {
+            flex: 1;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+            padding: 8px;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .taskbar-item:hover {
+            color: #ffeb3b;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .bottom-nav a {
+            text-decoration: none;
+            font-size: 20px;
+            color: gray;
+            padding: 5px;
+            transition: color 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bottom-nav a.active, .bottom-nav a:hover {
+            color: #ff6347;
+        }
+
+        .bottom-nav a[aria-label="Home"]::after {
+            content: "Home";
+            display: block;
+            font-size: 12px;
+            color: gray;
+            text-align: center;
+        }
+
+        .bottom-nav a[aria-label="Map"]::after {
+            content: "Map";
+            display: block;
+            font-size: 12px;
+            color: gray;
+            text-align: center;
+        }
+
+        .bottom-nav a[aria-label="Trending"]::after {
+            content: "Trending";
+            display: block;
+            font-size: 12px;
+            color: gray;
+            text-align: center;
+        }
+
+        .bottom-nav a[aria-label="Favorites"]::after {
+            content: "Favorites";
+            display: block;
+            font-size: 12px;
+            color: gray;
+            text-align: center;
+        }
+
+        .bottom-nav a[aria-label="Notifications"]::after {
+            content: "Notifications";
+            display: block;
+            font-size: 12px;
+            color: gray;
+            text-align: center;
+        }
+
+        /* Add notification badge style */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff4444;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .notification-item.unread {
+            border-left: 4px solid #ff4444;
+        }
+
+        /* Add animation for new notifications */
+        @keyframes newNotification {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .notification-item.new {
+            animation: newNotification 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="notification-section">
+        <div class="notification-header">Notifications</div>
+        <div class="taskbar">
+            <div class="taskbar-item" data-category="All">All</div>
+            <div class="taskbar-item" data-category="Proximity Based">Proximity</div>
+            <div class="taskbar-item" data-category="Flash sales">Flash sales</div>
+            <div class="taskbar-item" data-category="Reminder">Reminders</div>
+            <div class="taskbar-item" data-category="Expiring">Expiring</div>
+        </div>
+        <div class="notification-list" id="notification-list"></div>
+    </div>
+
+    <!-- 🔹 Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="../../home.html" aria-label="Home"><i class="fas fa-home"></i></a>
+        <a href="map.html" aria-label="Map"><i class="fas fa-map-marker-alt"></i></a>
+        <a href="hotdeal.html" aria-label="Trending"><i class="fa-solid fa-fire"></i></a>
+        <a href="wishlist.html" aria-label="Favorites"><i class="fas fa-heart"></i></a>
+        <a href="notify.html" class="active" id="notification-btn" aria-label="Notifications"><i class="fas fa-bell"></i></a>
+    </nav>
+
+    <script>
+        const taskbarItems = document.querySelectorAll('.taskbar-item');
+        const notificationList = document.getElementById('notification-list');
+        const notifications = {
+            "All": [
+                { title: "Nearby Event", message: "Don't miss the sale happening around you.", timestamp: "10 mins ago", color: "red", icon: "📍" },
+                { title: "Missed Offer", message: "You missed an exciting deal nearby!", timestamp: "1 hour ago", color: "blue", icon: "🎯" },
+                { title: "Reminder", message: "Flash Sale is ending soon!", timestamp: "30 mins ago", color: "yellow", icon: "⏰" },
+                { title: "Expiring Offer", message: "Hurry! This is the last day to grab the deal!", timestamp: "Expires today", color: "purple", icon: "📅" },
+                { title: "Festival Near You", message: "The food festival at Central Park is starting soon!", timestamp: "20 mins ago", color: "red", icon: "📍" },
+                { title: "Sale Missed", message: "Flash sale on electronics ended 30 minutes ago!", timestamp: "1 hour ago", color: "blue", icon: "🎯" },
+                { title: "Price Drop Alert", message: "Prices are lower now, check it out!", timestamp: "1 hour ago", color: "yellow", icon: "⏰" },
+                { title: "Final Call", message: "Limited stock left! Order now.", timestamp: "Expires in 2 hours", color: "purple", icon: "📅" }
+            ],
+            "Proximity Based": [
+                { title: "Nearby Event", message: "Don't miss the sale happening around you.", timestamp: "10 mins ago", color: "red", icon: "📍" },
+                { title: "Festival Near You", message: "The food festival at Central Park is starting soon!", timestamp: "20 mins ago", color: "red", icon: "📍" },
+                { title: "Local Discount", message: "Exclusive offers at the mall today.", timestamp: "30 mins ago", color: "red", icon: "📍" },
+                { title: "Flash Sale Nearby", message: "Flash sale at your favorite store!", timestamp: "40 mins ago", color: "red", icon: "📍" },
+                { title: "Exclusive Member Offer", message: "Special discounts for loyalty members.", timestamp: "1 hour ago", color: "red", icon: "📍" },
+                { title: "New Store Opening", message: "A new store has opened near you!", timestamp: "2 hours ago", color: "red", icon: "📍" },
+                { title: "Local Event", message: "Join the local event happening this weekend.", timestamp: "3 hours ago", color: "red", icon: "📍" }
+            ],
+            "Flash sales": 
+            [
+            { title: "Flash Frenzy!", message: "🔥 A new flash sale is live near you. Tap to explore deals!", timestamp: "Just now", color: "red", icon: "⚡" },
+            { title: "Deal Drop Alert", message: "🚨 Massive discounts just went live—don't miss out!", timestamp: "30 minutes ago", color: "red", icon: "🛍️" },
+            { title: "Trending Now", message: "📈 These flash sale items are getting snatched fast!", timestamp: "1 hour ago", color: "red", icon: "🔥" },
+            { title: "Flash Deal Ending", message: "⏳ Last chance to grab today’s top flash offer!", timestamp: "2 hours ago", color: "red", icon: "⏰" },
+            { title: "Sold Out Soon!", message: "⚠️ Limited stock left in the flash sale. Act fast!", timestamp: "3 hours ago", color: "red", icon: "❗" },
+            { title: "New Flash Sale", message: "🎉 Fresh deals just added to the flash sale section!", timestamp: "4 hours ago", color: "red", icon: "🆕" },
+            { title: "Stay Tuned", message: "📦 More flash sales dropping later today. Set your alerts!", timestamp: "5 hours ago", color: "red", icon: "🔔" }
+        ],
+        
+        
+
+
+            "Reminder": [
+                { title: "Reminder", message: "Flash Sale is ending soon!", timestamp: "30 mins ago", color: "yellow", icon: "⏰" },
+                { title: "Price Drop Alert", message: "Prices are lower now, check it out!", timestamp: "1 hour ago", color: "yellow", icon: "⏰" },
+                { title: "Upcoming Discount", message: "A major sale starts tomorrow!", timestamp: "5 hours ago", color: "yellow", icon: "⏰" },
+                { title: "Cart Reminder", message: "Items in your cart are running low in stock!", timestamp: "6 hours ago", color: "yellow", icon: "⏰" },
+                { title: "Loyalty Reward", message: "Your reward points are expiring soon!", timestamp: "7 hours ago", color: "yellow", icon: "⏰" },
+                { title: "Event Reminder", message: "Don't forget the event tomorrow!", timestamp: "8 hours ago", color: "yellow", icon: "⏰" },
+                { title: "Sale Reminder", message: "The sale ends in 2 hours!", timestamp: "9 hours ago", color: "yellow", icon: "⏰" }
+            ],
+            "Expiring": [
+                { title: "Expiring Offer", message: "Hurry! This is the last day to grab the deal!", timestamp: "Expires today", color: "purple", icon: "📅" },
+                { title: "Final Call", message: "Limited stock left! Order now.", timestamp: "Expires in 2 hours", color: "purple", icon: "📅" },
+                { title: "Limited Deal", message: "Only a few hours left for this deal!", timestamp: "Expires in 3 hours", color: "purple", icon: "📅" },
+                { title: "Almost Gone", message: "Act fast! The offer is about to end.", timestamp: "Expires tonight", color: "purple", icon: "📅" },
+                { title: "Last Chance", message: "Final hours to grab this deal!", timestamp: "Expires in 5 hours", color: "purple", icon: "📅" },
+                { title: "Deal Ending Soon", message: "This deal ends in 1 hour!", timestamp: "Expires in 1 hour", color: "purple", icon: "📅" },
+                { title: "Offer Expiring", message: "The offer expires at midnight.", timestamp: "Expires at midnight", color: "purple", icon: "📅" }
+            ]
+        };
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBhgQ-3m6DcXGZlDg6kq2Jx7Ei4ORHVJPE",
+            authDomain: "login-form-f98c7.firebaseapp.com",
+            projectId: "login-form-f98c7",
+            storageBucket: "login-form-f98c7.firebasestorage.app",
+            messagingSenderId: "174637943387",
+            appId: "1:174637943387:web:45fe45fe97f2699ee04d7e",
+            measurementId: "G-QX0XXWB1Q6"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+        const db = firebase.firestore();
+
+        // Request notification permission
+        async function requestNotificationPermission() {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await messaging.getToken();
+                    console.log('FCM Token:', token);
+                    // Save token to user's document in Firestore
+                    const userId = localStorage.getItem('loggedInUserId');
+                    if (userId) {
+                        await db.collection('users').doc(userId).update({
+                            fcmToken: token,
+                            notificationEnabled: true
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error getting permission:', error);
+            }
+        }
+
+        // Handle incoming notifications
+        messaging.onMessage((payload) => {
+            console.log('Received notification:', payload);
+            const notification = payload.notification;
+            
+            // Create notification object
+            const newNotification = {
+                title: notification.title,
+                message: notification.body,
+                timestamp: new Date().toISOString(),
+                category: notification.category || 'All',
+                color: getColorForCategory(notification.category),
+                icon: getIconForCategory(notification.category),
+                unread: true
+            };
+
+            // Add to local notifications
+            addNotificationToCategory(newNotification);
+            
+            // Update UI
+            const currentCategory = document.querySelector('.taskbar-item.active')?.getAttribute('data-category') || 'All';
+            displayNotifications(currentCategory);
+        });
+
+        // Helper function to get color based on category
+        function getColorForCategory(category) {
+            const colors = {
+                'Proximity Based': 'red',
+                'Flash sales': 'blue',
+                'Reminder': 'yellow',
+                'Expiring': 'purple'
+            };
+            return colors[category] || 'red';
+        }
+
+        // Helper function to get icon based on category
+        function getIconForCategory(category) {
+            const icons = {
+                'Proximity Based': '📍',
+                'Flash sales': '🎯',
+                'Reminder': '⏰',
+                'Expiring': '📅'
+            };
+            return icons[category] || '📢';
+        }
+
+        // Add notification to appropriate category
+        function addNotificationToCategory(notification) {
+            // Add to All category
+            notifications['All'].unshift(notification);
+            
+            // Add to specific category if it exists
+            if (notification.category && notifications[notification.category]) {
+                notifications[notification.category].unshift(notification);
+            }
+
+            // Keep only last 50 notifications per category
+            Object.keys(notifications).forEach(category => {
+                notifications[category] = notifications[category].slice(0, 50);
+            });
+
+            // Save to local storage
+            localStorage.setItem('notifications', JSON.stringify(notifications));
+        }
+
+        // Load notifications from local storage
+        function loadNotifications() {
+            const savedNotifications = localStorage.getItem('notifications');
+            if (savedNotifications) {
+                const parsed = JSON.parse(savedNotifications);
+                Object.keys(parsed).forEach(category => {
+                    notifications[category] = parsed[category];
+                });
+            }
+        }
+
+        // Update display notifications function
+        function displayNotifications(category) {
+            notificationList.innerHTML = "";
+            
+            if (notifications[category]) {
+                notifications[category].forEach(notification => {
+                    const notificationDiv = document.createElement('div');
+                    notificationDiv.classList.add('notification-item', notification.color);
+                    if (notification.unread) {
+                        notificationDiv.classList.add('unread');
+                    }
+                    notificationDiv.innerHTML = `
+                        <div class="icon">${notification.icon}</div>
+                        <div class="notification-content">
+                            <div class="notification-title">${notification.title}</div>
+                            <div class="notification-message">${notification.message}</div>
+                        </div>
+                        <div class="timestamp">${formatTimestamp(notification.timestamp)}</div>
+                    `;
+                    
+                    // Mark as read when clicked
+                    notificationDiv.addEventListener('click', () => {
+                        notification.unread = false;
+                        notificationDiv.classList.remove('unread');
+                        localStorage.setItem('notifications', JSON.stringify(notifications));
+                        updateNotificationBadge();
+                    });
+                    
+                    notificationList.appendChild(notificationDiv);
+                });
+                notificationList.style.display = 'block';
+            }
+            updateNotificationBadge();
+        }
+
+        // Format timestamp
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000); // difference in seconds
+
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+            return date.toLocaleDateString();
+        }
+
+        // Update notification badge
+        function updateNotificationBadge() {
+            const unreadCount = notifications['All'].filter(n => n.unread).length;
+            const badge = document.querySelector('#notification-btn .notification-badge');
+            
+            if (unreadCount > 0) {
+                if (!badge) {
+                    const newBadge = document.createElement('span');
+                    newBadge.className = 'notification-badge';
+                    newBadge.textContent = unreadCount;
+                    document.querySelector('#notification-btn').appendChild(newBadge);
+                } else {
+                    badge.textContent = unreadCount;
+                }
+            } else if (badge) {
+                badge.remove();
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotifications();
+            requestNotificationPermission();
+            displayNotifications('All');
+
+            // Add active class handling for taskbar
+            taskbarItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    taskbarItems.forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    const category = item.getAttribute('data-category');
+                displayNotifications(category);
+            });
+        });
+
+            // Set first taskbar item as active
+            taskbarItems[0].classList.add('active');
+        });
+    </script>
+</body>
+</html>

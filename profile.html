@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Enhanced Mobile Profile UI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    /* Add theme colors at the top */
+    :root {
+      --primary-color: #FF6347;    /* Red */
+      --primary-light: #FF7F50;    /* Light Red */ 
+      --white: #FFFFFF;
+      --gray-light: #F5F5F5;
+      --gray-border: #EEEEEE;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Arial', sans-serif;
+    }
+
+    body {
+      background: var(--white);
+      padding: 0;
+      margin: 0;
+      max-width: 100vw;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      padding: 16px;
+      margin: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+      color: var(--white);
+    }
+
+    .app-bar h1 {
+      margin-left: auto;
+      font-size: 18px;
+      padding-right: 16px;
+      text-transform: none;
+    }
+
+    .button, .activity-tile {
+      min-height: 52px;
+      padding: 12px 16px;
+      margin: 4px 16px !important;
+      width: calc(100% - 32px);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      font-size: 16px;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    .button {
+      background: var(--white);
+      border: 1px solid var(--black);
+      color: var(--black);
+      text-decoration: none;
+      display: block;
+    }
+
+    .button:hover {
+      background: var(--primary-color);
+      color: var(--white);
+    }
+
+    .button:last-of-type {
+      margin-bottom: 60px;
+    }
+
+    .interests-section {
+      margin: 12px 8px;
+      background: var(--white);
+    }
+
+    .interests-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--white);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      border: 1px solid var(--gray-border);
+    }
+
+    .toggle-icon {
+      transition: transform 0.3s;
+    }
+
+    .toggle-icon.active {
+      transform: rotate(180deg);
+    }
+
+    .categories-container {
+      display: none;
+      padding: 10px;
+      background: #fff;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+
+    .categories-container.show {
+      display: block;
+    }
+
+    .checkbox-group {
+      min-height: 44px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      margin: 8px 0;
+      background: var(--gray-light);
+      border-radius: 6px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      margin-right: 10px;
+    }
+
+    .selected-categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 15px 0;
+    }
+
+    .selected-category {
+      background: var(--primary-color);
+      color: var(--white);
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .remove-category {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .input-group {
+      margin-top: 16px;
+    }
+
+    .input-group label {
+      font-weight: bold;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .input-group input {
+      height: 52px;
+      padding: 12px 16px;
+      font-size: 16px;
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--gray-border);
+      background: var(--white);
+    }
+
+    .input-group input.error {
+      border-color: var(--primary-color);
+    }
+
+    .password-criteria {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .password-criteria ul {
+      display: flex;
+      gap: 10px;
+      list-style: none;
+      flex-wrap: wrap;
+    }
+
+    .password-criteria.error {
+      color: var(--primary-color);
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 35px;
+      cursor: pointer;
+      color: var(--primary-color);
+    }
+
+    .save-btn {
+      position: absolute;
+      right: 16px;
+      bottom: 20px;
+      background: var(--white);
+      color: var(--primary-color);
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-weight: bold;
+      width: auto;
+      min-width: 60px;
+      max-width: 80px;
+      border: 1px solid var(--primary-color);
+      cursor: pointer;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--white);
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      z-index: 1000;
+      width: calc(100% - 32px);
+      max-width: 320px;
+    }
+
+    .popup button {
+      margin-top: 15px;
+      padding: 12px 30px;
+      background: var(--primary-color);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .logout {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: 400px;
+      padding: 15px 20px;
+      background: var(--white);
+      color: var(--primary-color);
+      border: 2px solid var(--primary-color);
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .logout:hover {
+      background-color: var(--primary-color);
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    .logout:active {
+      transform: translateX(-50%) scale(0.98);
+    }
+
+    .edit-btn-container {
+      position: fixed;
+      right: 16px;
+      top: 85px;
+      z-index: 100;
+    }
+
+    .edit-btn-container .button {
+      padding: 10px 20px;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .container {
+      position: relative;
+      max-width: 100%;
+      margin: 0 auto;
+      overflow-x: hidden;
+      height: 100%;
+    }
+
+    @media screen and (max-width: 360px) {
+      .button, .activity-tile {
+        margin: 3px 12px !important;
+        width: calc(100% - 24px);
+      }
+      
+      .input-group {
+        margin: 12px;
+      }
+      
+      .app-bar h1 {
+        font-size: 16px;
+        padding-right: 12px;
+      }
+
+      .logout {
+        width: calc(100% - 24px);
+        bottom: 15px;
+      }
+
+      .edit-button-container {
+        padding: 8px 12px 6px;
+      }
+
+      .edit-profile-btn {
+        padding: 4px 10px;
+        min-width: 50px;
+        font-size: 13px;
+      }
+
+      .save-btn {
+        padding: 6px 12px;
+        min-width: 50px;
+        font-size: 13px;
+        right: 12px;
+        bottom: 16px;
+      }
+
+      .back-button {
+        font-size: 18px;
+        padding: 6px;
+      }
+
+      #profilePage {
+        padding-bottom: 100px;
+      }
+      
+      .button:last-of-type {
+        margin-bottom: 60px;
+      }
+
+      .main-buttons {
+        gap: 5px;
+      }
+    }
+
+    @media screen and (min-width: 361px) and (max-width: 400px) {
+      .button, .activity-tile {
+        margin: 3px 14px;
+        width: calc(100% - 28px);
+      }
+
+      .logout {
+        width: calc(100% - 28px);
+      }
+
+      .edit-profile-btn {
+        min-width: 65px;
+        padding: 5px 14px;
+      }
+
+      .save-btn {
+        right: 14px;
+        bottom: 18px;
+      }
+
+      #profilePage {
+        padding-bottom: 110px;
+      }
+      
+      .button:last-of-type {
+        margin-bottom: 65px;
+      }
+    }
+
+    @media screen and (min-width: 401px) {
+      .container {
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      
+      .logout {
+        max-width: 400px;
+      }
+    }
+
+    .bottom-buttons {
+      display: none;
+    }
+
+    #profilePage, #editProfilePage {
+      padding-bottom: 60px;
+      position: relative;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    .activity-section {
+      margin: 16px;
+      padding-bottom: 80px;
+    }
+
+    .activity-tile {
+      gap: 12px;
+      margin: 8px 0;
+      background: var(--white);
+      border: 1px solid var(--gray-border);
+      color: var(--primary-color);
+    }
+
+    .activity-tile:hover {
+      background: var(--gray-light);
+    }
+
+    /* Add hover effects */
+    .button:active,
+    .logout:active,
+    .activity-tile:active {
+      transform: scale(0.98);
+      transition: transform 0.2s;
+    }
+
+    /* Update edit button styling */
+    .edit-button-container {
+      width: 100%;
+      padding: 12px 16px 8px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .edit-profile-btn {
+      background: var(--white);
+      color: var(--primary-color);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-weight: bold;
+      width: auto;
+      min-width: 60px;
+      border: 1px solid var(--primary-color);
+      cursor: pointer;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    /* Add styling for input with change button */
+    .input-with-change {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-with-change input {
+      flex: 1;
+      padding-right: 80px; /* Make space for change button */
+    }
+
+    .change-btn {
+      position: absolute;
+      right: 8px;
+      padding: 4px 8px;
+      background: transparent;
+      color: var(--primary-color);
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* Update edit profile page container */
+    #editProfilePage {
+      position: relative;
+      min-height: 100vh;
+      padding-bottom: 70px; /* Space for save button */
+      background: var(--white);
+    }
+
+    /* Add/Update back button styling */
+    .back-button {
+      background: transparent;
+      border: none;
+      color: var(--white);
+      font-size: 20px;
+      padding: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      min-width: 40px;
+    }
+
+    .back-button:active {
+      transform: scale(0.95);
+    }
+
+    .logout {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logout.loading {
+      color: transparent;
+    }
+
+    .logout.loading::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 50%;
+      left: 50%;
+      margin: -10px 0 0 -10px;
+      border: 2px solid transparent;
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: loading-spinner 0.8s ease infinite;
+    }
+
+    @keyframes loading-spinner {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Update the profile page container style */
+    #profilePage {
+        padding-bottom: 80px;
+        min-height: 100vh;
+        position: relative;
+    }
+
+    /* Create a wrapper for the main buttons */
+    .main-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-bottom: 70px;
+    }
+
+    .main-buttons .button:first-child {
+        margin-top: 0 !important;
+    }
+
+    .button + .button {
+        margin-top: 0 !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+  <!-- Profile Page -->
+  <div id="profilePage">
+    <div class="app-bar">
+        <button onclick="goToHomePage()" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1>Profile</h1>
+    </div>
+
+    <div class="main-buttons">
+        <div class="button" onclick="showEditProfile()">Edit profile</div>
+        <a href="notifications.html" class="button">Notification Settings</a>
+        <a href="permissions.html" class="button">Permissions</a>
+        <a href="privacy.html" class="button">Privacy settings</a>
+        <a href="language.html" class="button">Language</a>
+        <a href="reviews.html" class="button">Reviews</a>
+        <a href="about.html" class="button">About us</a>
+    </div>
+    
+    <button class="logout" onclick="logout()">LOG OUT</button>
+  </div>
+
+  <!-- Edit Profile Page -->
+  <div id="editProfilePage" class="hidden">
+    <div class="app-bar">
+        <button onclick="showProfile()" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+      <h1>Edit profile</h1>
+    </div>
+
+      <div class="edit-button-container">
+        <button class="edit-profile-btn" onclick="enableEdit()">EDIT</button>
+    </div>
+
+    <div class="input-group">
+      <label>NAME</label>
+        <div class="input-with-change">
+      <input type="text" placeholder="Eg. Jonas Martin" disabled>
+         
+        </div>
+    </div>
+
+    <div class="input-group">
+      <label>USERNAME</label>
+      <input type="text" placeholder="Eg. Jonas" disabled>
+    </div>
+
+    <div class="input-group">
+      <label>PASSWORD</label>
+      <input type="password" id="passwordField" placeholder="" disabled>
+      <span class="toggle-password" onclick="togglePassword()">👁</span>
+        <div class="password-criteria" id="passwordCriteria">
+          <span>Password must have:</span>
+          <ul>
+            <li id="lengthCriteria">8 chars max</li>
+            <li id="letterCriteria">letter</li>
+            <li id="numberCriteria">number</li>
+            <li id="symbolCriteria">symbol</li>
+          </ul>
+        </div>
+    </div>
+
+      <div class="interests-section">
+        <div class="interests-header" onclick="toggleInterests()">
+    <label><b>INTERESTS</b></label>
+          <span class="toggle-icon" id="interestsToggle">▼</span>
+        </div>
+        <div class="selected-categories" id="selectedCategories">
+          <!-- Selected categories will appear here -->
+        </div>
+        <div class="categories-container" id="categoriesContainer">
+          <div class="checkbox-group">
+            <input type="checkbox" id="shoes" onchange="updateSelectedCategories(this)">
+            <label for="shoes">Shoes</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="sandals" onchange="updateSelectedCategories(this)">
+            <label for="sandals">Sandals</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="highHeels" onchange="updateSelectedCategories(this)">
+            <label for="highHeels">High Heels</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="sarees" onchange="updateSelectedCategories(this)">
+            <label for="sarees">Sarees</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="kurtis" onchange="updateSelectedCategories(this)">
+            <label for="kurtis">Kurtis</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="lehanga" onchange="updateSelectedCategories(this)">
+            <label for="lehanga">Lehanga</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="jeans" onchange="updateSelectedCategories(this)">
+            <label for="jeans">Jeans</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="shirt" onchange="updateSelectedCategories(this)">
+            <label for="shirt">Shirt</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="tshirt" onchange="updateSelectedCategories(this)">
+            <label for="tshirt">T-Shirt</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="skinCare" onchange="updateSelectedCategories(this)">
+            <label for="skinCare">Skin Care Products</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="beauty" onchange="updateSelectedCategories(this)">
+            <label for="beauty">Beauty Products</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="jewellery" onchange="updateSelectedCategories(this)">
+            <label for="jewellery">Jewellery</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="tv" onchange="updateSelectedCategories(this)">
+            <label for="tv">TV</label>
+          </div>
+          <div class="checkbox-group">
+            <input type="checkbox" id="washingMachine" onchange="updateSelectedCategories(this)">
+            <label for="washingMachine">Washing Machine</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="activity-section">
+        <h3 style="margin-bottom: 15px;">MY ACTIVITY</h3>
+        <div class="activity-tile" onclick="window.location.href='wishlist.html'">
+          <i>❤</i>
+          <span>Wishlisted Deals</span>
+        </div>
+        <div class="activity-tile" onclick="window.location.href='shared.html'">
+          <i>🔗</i>
+          <span>Shared Deals</span>
+        </div>
+        <div class="activity-tile" onclick="window.location.href='followed.html'">
+          <i>🏬</i>
+          <span>Followed Shops</span>
+        </div>
+        <div class="activity-tile" onclick="window.location.href='history.html'">
+          <i>🕑</i>
+          <span>History</span>
+        </div>
+      </div>
+
+      <button class="save-btn" onclick="saveProfile()">SAVE</button>
+  </div>
+
+  <!-- Popup -->
+  <div id="popup" class="popup hidden">
+    <p>Your profile is changed</p>
+    <button onclick="closePopup()">OK</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+
+    // Your Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyBhgQ-3m6DcXGZlDg6kq2Jx7Ei4ORHVJPE",
+        authDomain: "login-form-f98c7.firebaseapp.com",
+        projectId: "login-form-f98c7",
+        storageBucket: "login-form-f98c7.firebasestorage.app",
+        messagingSenderId: "174637943387",
+        appId: "1:174637943387:web:45fe45fe97f2699ee04d7e",
+        measurementId: "G-QX0XXWB1Q6"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Make logout function available globally
+    window.performLogout = async function() {
+        try {
+            await signOut(auth);
+            localStorage.removeItem('loggedInUserId'); // Clear stored user ID
+            window.location.href = 'login.html'; // Redirect to login page
+        } catch (error) {
+            console.error("Error signing out:", error);
+            alert("Error signing out. Please try again.");
+        }
+    };
+
+    // Add this to your Firebase script section
+    auth.onAuthStateChanged((user) => {
+        if (!user) {
+            // If no user is signed in, redirect to login page
+            window.location.href = 'login.html';
+        }
+    });
+  </script>
+
+  <script>
+    function showEditProfile() {
+      document.getElementById('profilePage').classList.add('hidden');
+      document.getElementById('editProfilePage').classList.remove('hidden');
+    }
+
+    function showProfile() {
+      document.getElementById('editProfilePage').classList.add('hidden');
+      document.getElementById('profilePage').classList.remove('hidden');
+    }
+
+    function enableEdit() {
+      document.querySelectorAll('#editProfilePage input').forEach(input => {
+        input.disabled = false;
+      });
+    }
+
+    function togglePassword() {
+      const passwordField = document.getElementById('passwordField');
+      passwordField.type = passwordField.type === 'password' ? 'text' : 'password';
+    }
+
+    function toggleInterests() {
+      const container = document.getElementById('categoriesContainer');
+      const toggle = document.getElementById('interestsToggle');
+      container.classList.toggle('show');
+      toggle.classList.toggle('active');
+    }
+
+    function validatePassword(password) {
+      const criteria = {
+        length: password.length <= 8 && password.length > 0,
+        letter: /[a-zA-Z]/.test(password),
+        number: /[0-9]/.test(password),
+        symbol: /[!@#$%^&*]/.test(password)
+      };
+
+      document.getElementById('lengthCriteria').style.color = criteria.length ? 'green' : 'red';
+      document.getElementById('letterCriteria').style.color = criteria.letter ? 'green' : 'red';
+      document.getElementById('numberCriteria').style.color = criteria.number ? 'green' : 'red';
+      document.getElementById('symbolCriteria').style.color = criteria.symbol ? 'green' : 'red';
+
+      return Object.values(criteria).every(value => value === true);
+    }
+
+    function updateSelectedCategories(checkbox) {
+      const selectedContainer = document.getElementById('selectedCategories');
+      const label = checkbox.nextElementSibling.textContent;
+      
+      if (checkbox.checked) {
+        const selectedCategory = document.createElement('div');
+        selectedCategory.className = 'selected-category';
+        selectedCategory.id = 'selected-' + checkbox.id;
+        selectedCategory.innerHTML = `
+          ${label}
+          <span class="remove-category" onclick="removeCategory('${checkbox.id}')">✕</span>
+        `;
+        selectedContainer.appendChild(selectedCategory);
+      } else {
+        const selectedCategory = document.getElementById('selected-' + checkbox.id);
+        if (selectedCategory) {
+          selectedCategory.remove();
+        }
+      }
+    }
+
+    function removeCategory(id) {
+      const checkbox = document.getElementById(id);
+      checkbox.checked = false;
+      const selectedCategory = document.getElementById('selected-' + id);
+      if (selectedCategory) {
+        selectedCategory.remove();
+      }
+    }
+
+    function saveProfile() {
+      const passwordField = document.getElementById('passwordField');
+      const password = passwordField.value;
+
+      if (password && !validatePassword(password)) {
+        passwordField.classList.add('error');
+        document.getElementById('passwordCriteria').classList.add('error');
+        return;
+      }
+
+      document.getElementById('popup').classList.remove('hidden');
+    }
+
+    function closePopup() {
+      document.getElementById('popup').classList.add('hidden');
+    }
+
+    function goToHomePage() {
+      window.location.href = '../../home.html';
+    }
+
+    function logout() {
+      const confirmLogout = confirm("Are you sure you want to log out?");
+      if (confirmLogout) {
+        const logoutBtn = document.querySelector('.logout');
+        logoutBtn.classList.add('loading');
+        logoutBtn.disabled = true;
+        
+        performLogout().catch(error => {
+          logoutBtn.classList.remove('loading');
+          logoutBtn.disabled = false;
+          alert("Error signing out. Please try again.");
+        });
+      }
+    }
+  </script>
+</body>
+</html>
